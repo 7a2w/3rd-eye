@@ -19,9 +19,16 @@ DASHBOARD_PORT = 8000        # the dashboard opens at http://localhost:8000
 # faster-whisper model sizes: "tiny.en", "base.en", "small.en", "medium.en"
 # tiny/base are fast enough for most laptops on CPU; small is more accurate.
 WHISPER_MODEL = os.environ.get("THIRD_EYE_WHISPER", "small.en")
+STT_ENGINE = os.environ.get("THIRD_EYE_STT", "questions")  # questions = Gemini for your questions, Whisper for the rest
+#                                                             gemini = Gemini for everything (uses free quota fast)
+#                                                             whisper = offline only
+WEB_SEARCH = True            # let answers use Google Search for recent information (Gemini)
 WHISPER_BEAM = 5             # wider search = fewer misheard words (1 is fastest)
 SAMPLE_RATE = 16000          # Whisper expects 16 kHz mono
 CHUNK_SECONDS = 8            # how much lecture audio to transcribe at a time
+QUESTION_END_SILENCE = 1.2   # a pause this long (s) after you speak ends the question
+QUESTION_WAIT_SECONDS = 6    # give up if you haven't started talking by then
+QUESTION_MAX_SECONDS = 25    # longest question
 QUESTION_SECONDS = 6         # how long push-to-talk listens for your question
 SILENCE_RMS = 0.004          # chunks quieter than this are skipped (tune for your mic)
 

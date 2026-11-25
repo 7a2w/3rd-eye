@@ -702,7 +702,7 @@ async function poll() {
 
   const ab = $('askBtn');
   ab.disabled = S.asking;
-  ab.innerHTML = S.ask_remaining > 0 ? `Listening… ${Math.ceil(S.ask_remaining)}`
+  ab.innerHTML = S.ask_remaining > 0 ? 'Listening… just talk'
     : S.asking ? 'Working on it…' : 'Talk to Third Eye';
   $('pauseBtn').textContent = S.paused ? 'Resume' : 'Pause';
   $('status').textContent = live ? S.status : '';

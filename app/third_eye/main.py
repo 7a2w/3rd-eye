@@ -405,7 +405,7 @@ class App:
             if isinstance(self.source, FileAudioSource):
                 self.source.paused = True
             self.indicator.set("ASK")
-            self.ask_until = time.time() + config.QUESTION_SECONDS
+            self.ask_until = time.time() + config.QUESTION_MAX_SECONDS
             self.status = "Listening to your question..."
             audio = self.source.ask_question()
             self.ask_until = 0

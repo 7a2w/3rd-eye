@@ -120,14 +120,16 @@ def check_gemini_key(key: str) -> str:
     return reasons[0] if reasons else "no answer from Google"
 
 
-def _gemini_request(model, system, user, max_tokens, timeout):
+def _gemini_request(model, system, user, max_tokens, timeout, extra_parts=None, search=False):
     gen = {"maxOutputTokens": max_tokens * 4 + 1024, "temperature": 0.4}
     # Thinking makes answers slower; switch it off where the model allows.
     if model.startswith("gemini-2.5-flash") and model not in _no_thinking_cfg:
         gen["thinkingConfig"] = {"thinkingBudget": 0}
     body = {"systemInstruction": {"parts": [{"text": system}]},
-            "contents": [{"role": "user", "parts": [{"text": user}]}],
+            "contents": [{"role": "user", "parts": (extra_parts or []) + [{"text": user}]}],
             "generationConfig": gen}
+    if search:
+        body["tools"] = [{"google_search": {}}]
     req = urllib.request.Request(
         gemini_url(model, config.GEMINI_API_KEY),
         data=json.dumps(body).encode(), method="POST",
@@ -136,8 +138,12 @@ def _gemini_request(model, system, user, max_tokens, timeout):
         return json.load(resp)
 
 
-def call_gemini(system: str, user: str, max_tokens: int = 600, fast: bool = False) -> str:
-    """Google Gemini API (free tier available), standard library only."""
+_no_search = set()          # models that refused the Google Search tool
+
+
+def call_gemini(system: str, user: str, max_tokens: int = 600, fast: bool = False,
+                search: bool = False, extra_parts=None) -> str:
+    """Google Gemini API (free tier available), standard library only. search=True lets it look things up."""
     if config.GEMINI_API_KEY not in _endpoint:
         check_gemini_key(config.GEMINI_API_KEY)
     mode = "fast" if fast else "smart"
@@ -148,13 +154,17 @@ def call_gemini(system: str, user: str, max_tokens: int = 600, fast: bool = Fals
     last_error = None
     for attempt in range(2):                  # two rounds through the models, with a short pause between
         for model in models:
+            use_search = search and model not in _no_search
             try:
                 try:
-                    data = _gemini_request(model, system, user, max_tokens, timeout)
+                    data = _gemini_request(model, system, user, max_tokens, timeout, extra_parts, use_search)
                 except urllib.error.HTTPError as e:
-                    if e.code == 400 and model not in _no_thinking_cfg:
+                    if e.code == 400 and use_search:
+                        _no_search.add(model)         # no search on this model or key: answer without it
+                        data = _gemini_request(model, system, user, max_tokens, timeout, extra_parts)
+                    elif e.code == 400 and model not in _no_thinking_cfg:
                         _no_thinking_cfg.add(model)   # model didn't accept the thinking setting: retry without
-                        data = _gemini_request(model, system, user, max_tokens, timeout)
+                        data = _gemini_request(model, system, user, max_tokens, timeout, extra_parts)
                     else:
                         raise
             except urllib.error.HTTPError as e:
@@ -163,9 +173,17 @@ def call_gemini(system: str, user: str, max_tokens: int = 600, fast: bool = Fals
                     last_error = f"{model}: {'not available' if e.code == 404 else 'busy right now'}"
                     continue
                 if e.code == 429:                     # limit for this model: another model has its own limit
-                    last_error = "Gemini free-tier limit reached; wait a minute and try again"
-                    continue
-                raise RuntimeError(f"Gemini error {e.code}: {detail}") from None
+                    if use_search:                    # search has its own, smaller limit: try without it
+                        try:
+                            data = _gemini_request(model, system, user, max_tokens, timeout, extra_parts)
+                        except Exception:
+                            last_error = "Gemini free-tier limit reached; wait a minute and try again"
+                            continue
+                    else:
+                        last_error = "Gemini free-tier limit reached; wait a minute and try again"
+                        continue
+                else:
+                    raise RuntimeError(f"Gemini error {e.code}: {detail}") from None
             except (urllib.error.URLError, TimeoutError) as e:
                 last_error = f"couldn't reach {model} ({e})"
                 continue
@@ -179,13 +197,27 @@ def call_gemini(system: str, user: str, max_tokens: int = 600, fast: bool = Fals
     raise RuntimeError(last_error or "Gemini didn't answer")
 
 
-def call_ai(system: str, user: str, max_tokens: int = 600, fast: bool = False) -> str:
+def call_ai(system: str, user: str, max_tokens: int = 600, fast: bool = False, search: bool = False) -> str:
     """Use whichever AI has a key: Claude first, then Gemini. fast=True for live questions."""
     if config.ANTHROPIC_API_KEY:
         return call_claude(system, user, max_tokens)
     if config.GEMINI_API_KEY:
-        return call_gemini(system, user, max_tokens, fast=fast)
+        return call_gemini(system, user, max_tokens, fast=fast, search=search)
     raise RuntimeError("no AI key set")
+
+
+def gemini_transcribe(wav_bytes: bytes, context: str = "") -> str:
+    """Speech to text with Gemini. Raises on any failure so the caller can fall back to Whisper."""
+    import base64
+    prompt = ("Transcribe the speech in this audio exactly as spoken, in English. Output only the words. "
+              "If there is no clear speech, output nothing.")
+    if context:
+        prompt += f" The speech continues from: \"{context[-200:]}\""
+    part = {"inlineData": {"mimeType": "audio/wav", "data": base64.b64encode(wav_bytes).decode()}}
+    text = call_gemini("You are an accurate speech-to-text engine.", prompt, max_tokens=300, fast=True,
+                       extra_parts=[part])
+    text = text.strip().strip('"')
+    return "" if text.lower() in ("", "nothing", "(no speech)", "[no speech]", "no speech") else text
 
 
 def keywords(text: str):
@@ -208,7 +240,7 @@ def offline_answer(question: str, transcript: str) -> str:
 class Assistant:
     SYSTEM = ("You are Third Eye, an assistant speaking in the user's earpiece. Answer exactly what they asked, "
               "directly, in one or two short sentences. Lead with the answer itself. Use general knowledge for "
-              "general questions. Never describe the situation, summarize what you heard, or mention the "
+              "general questions, and search the web for anything recent (news, scores, weather, prices, dates). Never describe the situation, summarize what you heard, or mention the "
               "background unless the question is about it. If the question is garbled, answer the most likely "
               "meaning. No lists, no markdown, no filler.")
 
@@ -250,13 +282,17 @@ class Assistant:
                              "earlier session, say you don't have that.\n" if asks_past else "")
                           + "\nAnswer the QUESTION.")
                 t0 = time.time()
-                answer = call_ai(self.SYSTEM, prompt, max_tokens=200, fast=True)
+                answer = call_ai(self.SYSTEM, prompt, max_tokens=200, fast=True, search=config.WEB_SEARCH)
                 print(f"[assistant] answered in {time.time() - t0:.1f}s")
                 return answer
             except Exception as e:
                 if not fallback:
                     raise
                 print(f"[assistant] API error, using offline answer: {e}")
+                if "limit" in str(e).lower():
+                    return "Gemini's free limit is used up for the moment. Ask again in a minute."
+                if "reach" in str(e).lower():
+                    return "I can't reach Gemini right now. Check the internet and ask again."
         return offline_answer(question, recent_transcript)
 
 

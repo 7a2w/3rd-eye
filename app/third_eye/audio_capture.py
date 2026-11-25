@@ -106,10 +106,31 @@ class LiveMicSource(_BaseSource):
 
     def ask_question(self) -> np.ndarray:
         # Reuse the open stream instead of opening a second one (more reliable on most laptops).
+        # Stops by itself: once you've started talking, a short pause ends the question.
         with self._lock:
             self._flush()
             self._question_buf = []
-        time.sleep(config.QUESTION_SECONDS)
+        start = time.time()
+        floor, spoke, last_voice, seen = None, False, start, 0
+        while True:
+            time.sleep(0.1)
+            with self._lock:
+                blocks = self._question_buf[seen:]
+                seen = len(self._question_buf)
+            for b in blocks:                                   # 0.1 s blocks at 16 kHz
+                rms = float(np.sqrt(np.mean(b ** 2)))
+                if floor is None:
+                    floor = rms
+                floor = min(floor * 1.01 + 1e-5, max(rms, 1e-5)) if not spoke else floor
+                if rms > max(config.SILENCE_RMS * 2, floor * 3):
+                    spoke, last_voice = True, time.time()
+            now = time.time()
+            if spoke and now - last_voice >= config.QUESTION_END_SILENCE:
+                break
+            if not spoke and now - start >= config.QUESTION_WAIT_SECONDS:
+                break
+            if now - start >= config.QUESTION_MAX_SECONDS:
+                break
         with self._lock:
             audio = np.concatenate(self._question_buf) if self._question_buf else np.zeros(1, np.float32)
             self._question_buf = None
