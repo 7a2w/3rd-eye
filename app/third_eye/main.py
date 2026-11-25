@@ -447,23 +447,19 @@ class App:
                 if provider == "claude":
                     req = urllib.request.Request("https://api.anthropic.com/v1/models?limit=1",
                                                  headers={"x-api-key": key.strip(), "anthropic-version": "2023-06-01"})
+                    urllib.request.urlopen(req, timeout=8).read()
                 else:
-                    from assistant import gemini_url
-                    body = json.dumps({"contents": [{"role": "user", "parts": [{"text": "Say OK."}]}],
-                                       "generationConfig": {"maxOutputTokens": 5}}).encode()
-                    req = urllib.request.Request(gemini_url("gemini-2.0-flash-lite", key.strip()), data=body,
-                                                 headers={"x-goog-api-key": key.strip(),
-                                                          "content-type": "application/json"})
-                urllib.request.urlopen(req, timeout=8).read()
+                    from assistant import check_gemini_key
+                    reason = check_gemini_key(key.strip())
+                    if reason:
+                        raise RuntimeError(reason)
             except Exception as e:
                 config.save_key(provider, old)
                 self.assistant = Assistant()
                 text = str(e)
-                if "API_KEY_INVALID" in text or "invalid x-api-key" in text or " 401" in text or " 400" in text:
-                    text = "the provider says it isn't valid. Copy it again from the provider's site."
-                elif "429" in text:
-                    text = "the key works but has hit its limit for now."
-                return {"ok": False, "error": f"That key didn't work: {text[:160]}"}
+                if "invalid x-api-key" in text or "HTTP Error 401" in text:
+                    text = "Anthropic says it isn't valid."
+                return {"ok": False, "error": f"Google/Anthropic said: {text[:220]}"}
         self.assistant = Assistant()
         name = "Gemini" if provider == "gemini" else "Claude"
         return {"ok": True, "message": f"{name} key saved. Answers now come from {self.assistant.provider or 'your notes only'}."
@@ -577,6 +573,39 @@ def open_window(url, app):
     webbrowser.open(url)
 
 
+def install_shortcuts(startup=False):
+    """Desktop and Start menu shortcuts that open Third Eye without a console window."""
+    import subprocess
+    import sys
+    from pathlib import Path
+    here = Path(__file__).resolve().parent
+    pyw = Path(sys.executable).with_name("pythonw.exe")
+    if not pyw.exists():
+        pyw = Path(sys.executable)
+    appdata = Path(os.environ["APPDATA"])
+    desktop = Path.home() / "Desktop"
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                            r"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders") as k:
+            desktop = Path(os.path.expandvars(winreg.QueryValueEx(k, "Desktop")[0]))
+    except OSError:
+        pass
+    places = [desktop, appdata / "Microsoft/Windows/Start Menu/Programs"]
+    if startup:
+        places.append(appdata / "Microsoft/Windows/Start Menu/Programs/Startup")
+    for folder in places:
+        if not folder.is_dir():
+            continue
+        lnk = folder / "Third Eye.lnk"
+        script = (f"$s=(New-Object -ComObject WScript.Shell).CreateShortcut('{lnk}');"
+                  f"$s.TargetPath='{pyw}';$s.Arguments='\"{here / 'main.py'}\"';"
+                  f"$s.WorkingDirectory='{here}';$s.IconLocation='{here / 'web' / 'third_eye.ico'}';"
+                  "$s.Description='Third Eye assistant';$s.Save()")
+        subprocess.run(["powershell", "-NoProfile", "-Command", script], check=True)
+        print(f"[shortcut] {lnk}")
+
+
 def main():
     p = argparse.ArgumentParser(description="Third Eye earpiece prototype (laptop demo)")
     p.add_argument("--course", default="", help='course name, e.g. "PSYC 1001" (you can also type it in the app)')
@@ -590,7 +619,17 @@ def main():
     p.add_argument("--no-browser", action="store_true", help="don't open the dashboard automatically")
     p.add_argument("--manual", action="store_true", help="wait for Start instead of listening right away")
     p.add_argument("--browser", action="store_true", help="open the dashboard in a browser tab instead of its own window")
+    p.add_argument("--install-shortcuts", action="store_true", help="add Desktop and Start menu shortcuts (Windows)")
+    p.add_argument("--start-with-windows", action="store_true", help="with --install-shortcuts: also start at sign-in")
     args = p.parse_args()
+    if args.install_shortcuts:
+        install_shortcuts(startup=args.start_with_windows)
+        return
+    import sys
+    if sys.stdout is None:            # started from the shortcut (pythonw): keep a log file instead
+        config.SYNC_FOLDER.mkdir(parents=True, exist_ok=True)
+        log = open(config.SYNC_FOLDER / "third_eye.log", "a", encoding="utf-8", buffering=1)
+        sys.stdout = sys.stderr = log
 
     app = App(args)
     from ui_server import serve

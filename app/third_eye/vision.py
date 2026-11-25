@@ -15,7 +15,15 @@ import numpy as np
 import config
 
 try:
+    import os
+    import shutil
     import pytesseract
+    if not shutil.which("tesseract"):
+        for exe in (r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+                    os.path.expandvars(r"%LOCALAPPDATA%\Programs\Tesseract-OCR\tesseract.exe")):
+            if os.path.exists(exe):
+                pytesseract.pytesseract.tesseract_cmd = exe
+                break
     pytesseract.get_tesseract_version()   # checks the Tesseract program is installed too
     _OCR = "tesseract"
 except Exception:

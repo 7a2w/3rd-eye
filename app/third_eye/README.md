@@ -17,6 +17,12 @@ What it does on its own:
 - After 10 minutes of quiet it ends the session, writes a summary and starts a new one.
 - Saves every session to your Obsidian vault, if you have one.
 
+### Open it like an app
+
+Run `py -3.12 main.py --install-shortcuts` once. It puts a **Third Eye** shortcut on your Desktop and
+in the Start menu that opens the window with no terminal. Add `--start-with-windows` to also start it
+when you sign in. Logs then go to `ThirdEyeNotes/third_eye.log`.
+
 ### AI key
 
 It works offline with simple rules, but it is much smarter with an AI key. Double-click **Set AI Key.bat**, paste the key, then restart Third Eye. Or set one of these yourself:

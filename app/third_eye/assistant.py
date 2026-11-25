@@ -48,11 +48,76 @@ _last_good = {}            # "fast"/"smart" -> model that answered last time (tr
 _no_thinking_cfg = set()   # models that rejected the thinking setting
 
 
+GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+VERTEX_API = "https://aiplatform.googleapis.com/v1/publishers/google/models/{model}:generateContent"
+_endpoint = {}             # key -> the address that accepted it
+
+
 def gemini_url(model, key):
-    """Regular Gemini keys (AIza...) use the Gemini API; Google Cloud express keys (AQ...) use Vertex AI."""
-    if key.startswith("AQ."):
-        return f"https://aiplatform.googleapis.com/v1/publishers/google/models/{model}:generateContent"
-    return f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    """Gemini API keys work on the Gemini API; Google Cloud express keys only on Vertex AI."""
+    return _endpoint.get(key, GEMINI_API).format(model=model)
+
+
+def _version(name):
+    m = re.search(r"gemini-(\d+(?:\.\d+)?)", name)
+    return float(m.group(1)) if m else 0.0
+
+
+def _pick_models(names):
+    """Newest stable Flash and Flash-Lite models the key can use."""
+    skip = ("preview", "exp", "tts", "image", "live", "audio", "embedding", "thinking", "learnlm", "-latest")
+    usable = sorted({n for n in names if "flash" in n and not any(x in n for x in skip)},
+                    key=_version, reverse=True)
+    lite = [n for n in usable if "lite" in n]
+    flash = [n for n in usable if "lite" not in n]
+    if lite or flash:
+        GEMINI_FAST[:] = (lite[:2] + flash[:2]) or GEMINI_FAST
+        GEMINI_SMART[:] = (flash[:2] + lite[:1]) or GEMINI_SMART
+        print(f"[assistant] Gemini models: fast {GEMINI_FAST[0]}, smart {GEMINI_SMART[0]}")
+
+
+def _google_reason(e):
+    try:
+        return json.loads(e.read().decode("utf-8", "replace"))["error"]["message"]
+    except Exception:
+        return f"HTTP {e.code}"
+
+
+def check_gemini_key(key: str) -> str:
+    """Find which Google address accepts the key and which models it can use. Returns "" if it works."""
+    reasons = []
+    try:
+        req = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",
+                                     headers={"x-goog-api-key": key})
+        data = json.load(urllib.request.urlopen(req, timeout=8))
+        _endpoint[key] = GEMINI_API
+        _pick_models([m["name"].split("/")[-1] for m in data.get("models", [])
+                      if "generateContent" in m.get("supportedGenerationMethods", [])])
+        return ""
+    except urllib.error.HTTPError as e:
+        reasons.append("Gemini API: " + _google_reason(e))
+    except Exception as e:
+        reasons.append(f"Gemini API: {e}")
+    body = json.dumps({"contents": [{"role": "user", "parts": [{"text": "Say OK."}]}],
+                       "generationConfig": {"maxOutputTokens": 5}}).encode()
+    for model in GEMINI_SMART + GEMINI_FAST:
+        req = urllib.request.Request(VERTEX_API.format(model=model), data=body, method="POST",
+                                     headers={"x-goog-api-key": key, "content-type": "application/json"})
+        try:
+            urllib.request.urlopen(req, timeout=8).read()
+        except urllib.error.HTTPError as e:
+            if e.code in (404, 429):          # the key was accepted; this model just isn't offered or is busy
+                _endpoint[key] = VERTEX_API
+                return ""
+            reasons.append("Vertex AI: " + _google_reason(e))
+            break
+        except Exception as e:
+            reasons.append(f"Vertex AI: {e}")
+            break
+        _endpoint[key] = VERTEX_API
+        return ""
+    print("[assistant] Gemini key rejected: " + " | ".join(reasons))
+    return reasons[0] if reasons else "no answer from Google"
 
 
 def _gemini_request(model, system, user, max_tokens, timeout):
@@ -73,6 +138,8 @@ def _gemini_request(model, system, user, max_tokens, timeout):
 
 def call_gemini(system: str, user: str, max_tokens: int = 600, fast: bool = False) -> str:
     """Google Gemini API (free tier available), standard library only."""
+    if config.GEMINI_API_KEY not in _endpoint:
+        check_gemini_key(config.GEMINI_API_KEY)
     mode = "fast" if fast else "smart"
     models = [config.GEMINI_MODEL] if config.GEMINI_MODEL and not fast else []
     models = list(dict.fromkeys(([_last_good[mode]] if mode in _last_good else []) + models

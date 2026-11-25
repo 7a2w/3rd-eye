@@ -130,3 +130,9 @@ VOICE_PITCH = "+0Hz"
 # ---------- Study sheet reminders ----------
 REVIEW_DAYS = [1, 3, 7]      # spaced-repetition review reminders (days after lecture)
 REMINDER_HOUR = 18           # reminders fire at 6 pm local time
+
+try:
+    import settings_store
+    settings_store.load()
+except Exception as e:
+    print(f"[settings] not loaded: {e}")
