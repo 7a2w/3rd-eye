@@ -1,0 +1,10 @@
+# core
+numpy
+opencv-python
+sounddevice
+faster-whisper
+
+# optional but recommended
+pytesseract      # reads slide/whiteboard text (also install the Tesseract program, see README)
+python-docx      # Word version of the study sheet
+pyttsx3          # spoken answers on Windows/Linux (macOS uses the built-in "say")

@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Third Eye</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%2280%2020%20478%20504%22%3E%3Cpath%20fill%3D%22%23ece5da%22%20fill-rule%3D%22evenodd%22%20d%3D%22M109%20430.8%20L109%20432.8%20L314.5%20519.2%20L317.5%20519.2%20L522.2%20433.0%20L522.2%20431.0%20L420.2%20431.0%20L317.2%20474.2%20L314.8%20474.2%20L212.2%20431.0Z%20M91%20123.0%20L90.8%20125.8%20L92.2%20135.8%20L93.2%20136.2%20L107.8%20137.2%20L117.5%20139.2%20L133.2%20144.0%20L154.2%20152.2%20L166.5%20158.8%20L174.8%20165.2%20L180%20172.2%20L183.2%20178.2%20L186%20185.5%20L187.2%20192.0%20L187.2%20203.5%20L185.8%20210.5%20L182.8%20217.8%20L179%20223.2%20L174.5%20228.2%20L169.5%20232.0%20L164.5%20234.5%20L153.8%20237.8%20L138.8%20237.8%20L123.2%20233.8%20L121.2%20233.8%20L121.2%20236.0%20L137.5%20257.5%20L157.2%20288.8%20L173.5%20317.2%20L188.8%20347.8%20L195.8%20363.8%20L198%20363.5%20L200.8%20297.5%20L201.2%20236.0%20L200%20184.5%20L201.5%20183.0%20L204%20183.8%20L208.2%20186.8%20L228%20203.0%20L247.5%20222.0%20L267.2%20244.2%20L287%20268.8%20L303%20290.0%20L305.5%20292.5%20L311.5%20301.2%20L330%20322.8%20L350.5%20342.2%20L366.5%20354.2%20L378.2%20361.5%20L402%20372.8%20L423.8%20379.5%20L447%20382.8%20L458.5%20383.2%20L475.5%20382.8%20L490.8%20380.2%20L497.8%20377.8%20L504.5%20374.2%20L508.2%20371.8%20L518.5%20362.2%20L525%20352.8%20L529.8%20341.5%20L534%20325.8%20L534.2%20312.8%20L533%20299.2%20L529.2%20286.2%20L525.8%20278.0%20L523.2%20274.5%20L517.2%20268.2%20L509.2%20262.2%20L499.8%20258.0%20L489%20256.2%20L478%20256.5%20L471.8%20257.8%20L466.8%20259.8%20L461.5%20262.5%20L456%20266.5%20L446.5%20276.8%20L441.2%20286.8%20L439%20296.2%20L439%20302.0%20L441%20310.2%20L443.2%20315.0%20L448%20321.5%20L454%20327.0%20L462%20331.8%20L468.8%20333.5%20L475.5%20333.0%20L480%20331.2%20L485.5%20327.2%20L488%20324.5%20L490.5%20320.2%20L493.2%20309.8%20L493.2%20303.5%20L491.8%20297.8%20L490.2%20294.5%20L488.5%20292.5%20L485%20290.0%20L479.2%20287.8%20L470.5%20287.2%20L459.2%20289.5%20L458.2%20288.5%20L458.5%20287.0%20L460.2%20284.5%20L465.8%20279.2%20L473%20275.0%20L477.5%20273.5%20L481%20273.0%20L490.2%20273.5%20L499%20277.2%20L502.5%20279.8%20L507.5%20284.8%20L511.8%20291.5%20L515.5%20303.0%20L516.5%20312.0%20L516.2%20320.8%20L514.8%20329.5%20L510.2%20339.8%20L506.8%20344.8%20L499.8%20351.8%20L490.8%20358.2%20L484%20361.5%20L475.8%20364.2%20L462.2%20366.2%20L451%20366.5%20L431.2%20363.2%20L418%20359.2%20L409%20355.8%20L389.2%20346.2%20L381.8%20341.8%20L362.8%20328.0%20L342.5%20309.0%20L325.5%20290.2%20L316.8%20279.5%20L308.2%20270.8%20L298%20258.2%20L294%20254.5%20L285.2%20243.8%20L244.5%20198.0%20L244%20196.2%20L245%20195.2%20L246.2%20195.2%20L261.8%20200.2%20L279.2%20203.8%20L306.2%20207.0%20L339.8%20206.8%20L358.8%20204.8%20L385.5%20200.5%20L403.5%20196.0%20L418%20191.5%20L447.8%20180.5%20L482.5%20163.5%20L502%20152.0%20L512.5%20148.5%20L520.2%20148.0%20L524.2%20148.2%20L529%20149.5%20L538.2%20154.0%20L543%20157.2%20L549.5%20163.0%20L551.5%20163.0%20L552.2%20133.0%20L551.5%20132.0%20L538%20131.0%20L509.2%20126.0%20L496%20122.8%20L457.8%20110.5%20L403.8%2088.5%20L376%2078.5%20L354.2%2072.8%20L338.5%2069.8%20L316%2067.8%20L293%2068.2%20L282%2069.5%20L265.2%2072.8%20L235.2%2081.5%20L171.2%20107.2%20L155.8%20112.8%20L148.2%20114.2%20L134.2%20118.2%20L112.8%20121.8%20L91.5%20122.5Z%20M491.5%20141.0%20L490%20142.8%20L482.2%20146.2%20L432.8%20166.0%20L427.2%20167.2%20L415.8%20171.5%20L396.8%20177.2%20L380.5%20181.5%20L362.8%20185.0%20L333.5%20188.2%20L304.8%20188.5%20L287.5%20187.0%20L269%20184.5%20L253%20180.8%20L232%20174.2%20L210.2%20166.2%20L182.8%20153.2%20L156.8%20139.2%20L146.5%20133.0%20L145.5%20131.8%20L145.5%20130.8%20L146.5%20129.8%20L153.2%20128.0%20L172.5%20121.2%20L232%2098.0%20L241.8%2094.8%20L243.5%2094.8%20L244.5%2095.5%20L244.5%2097.0%20L241%20102.2%20L237.8%20108.8%20L235.8%20115.2%20L235.2%20128.8%20L238.2%20140.5%20L240.8%20145.5%20L245.8%20152.2%20L252.8%20159.5%20L258%20163.2%20L269%20168.5%20L274%20170.2%20L288%20172.8%20L297%20172.8%20L307%20171.2%20L316.8%20168.2%20L323.5%20165.2%20L333%20158.8%20L337.8%20154.2%20L341.8%20149.2%20L347%20139.0%20L348.8%20133.2%20L349.8%20126.8%20L349%20115.2%20L346%20106.5%20L342.5%2099.8%20L340.2%2096.5%20L334.5%2090.5%20L334.5%2089.2%20L335.2%2088.5%20L337.5%2088.5%20L360.8%2093.5%20L379%2099.2%20L456%20129.0%20L490.2%20139.2Z%20M84.2%2084.5%20L88.2%2086.8%20L95.8%2089.2%20L102%2090.2%20L114.5%2090.5%20L127.2%2089.2%20L155.2%2082.0%20L182.5%2073.2%20L196%2068.0%20L221.8%2059.2%20L237.5%2055.0%20L264.8%2049.5%20L284.8%2047.2%20L294.8%2046.8%20L324.8%2047.2%20L343.2%2049.2%20L364%2052.8%20L392.2%2059.2%20L432.5%2073.5%20L460.2%2081.2%20L476%2084.8%20L490.2%2087.0%20L511.5%2087.8%20L521%2086.8%20L526%2085.8%20L536.5%2082.0%20L542%2079.0%20L542%2077.0%20L531.8%2077.5%20L514.8%2077.2%20L503.5%2076.0%20L492.2%2073.8%20L473.2%2068.0%20L433.5%2050.8%20L416.2%2044.2%20L393%2037.2%20L371.8%2032.0%20L346%2027.2%20L325.2%2025.0%20L295.8%2024.5%20L283%2025.0%20L264.8%2027.2%20L244.5%2031.8%20L233.2%2035.2%20L214.8%2042.5%20L176%2059.5%20L135.5%2074.0%20L124.5%2077.0%20L107.2%2080.2%20L84.2%2082.5Z%22/%3E%3Ccircle%20cx%3D%22292.0%22%20cy%3D%22120.9%22%20r%3D%2257.7%22%20fill%3D%22%23a58bff%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Conquer style: pure-black ground, hairlines, sharp corners, caps labels, mono numbers, teal accent, one white primary action */
+  :root{
+    --bg:#000;--surface:#000;--surface-2:#050505;--surface-3:#0f0f0f;
+    --hairline:rgba(255,255,255,.08);--rule:rgba(255,255,255,.08);--line-strong:rgba(255,255,255,.15);--border-ctl:rgba(255,255,255,.36);
+    --text-hi:#fff;--text:rgba(255,255,255,.93);--text-2:rgba(255,255,255,.72);--muted:rgba(255,255,255,.56);--faint:rgba(255,255,255,.38);
+    --accent:#35a996;--accent-fill:rgba(31,158,137,.18);--focus:#1f9e89;
+    --rec:#ff3355;--ask:#fdb42f;--warn:#ffc9a0;--danger:#ff3355;
+    --ui:Inter,"Segoe UI",system-ui,sans-serif;--read:var(--ui);
+    --mono:"JetBrains Mono",Consolas,"Courier New",monospace;
+    --ink:var(--bg);--ink-2:var(--surface-3);--paper:var(--text);--pencil:var(--muted);
+    --violet:var(--accent);--violet-deep:#fff;--marigold:var(--ask);--tomato:var(--danger);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font:13px/1.5 var(--ui);-webkit-font-smoothing:antialiased}
+  button,input,select{font:inherit;color:inherit}
+  ::selection{background:var(--accent-fill)}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .hidden{display:none!important}
+  a{color:var(--accent)}
+  .fieldname,.handout h3,.nb-head h2,.ask-class,.saved-note,.state,.ai-note,.cam .onair,.btn{text-transform:uppercase;letter-spacing:.08em}
+
+  header{display:flex;align-items:center;gap:16px;padding:0 20px;height:48px;background:var(--surface);border-bottom:1px solid var(--hairline)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase}
+  .eye{width:22px;height:24px;flex:none}
+  .eye .mark,.eye .pupil{fill:var(--text)}
+  .eye.rec .pupil{fill:var(--rec)} .eye.ask .pupil{fill:var(--ask)} .eye.paused .pupil{fill:var(--faint)}
+  .classname{color:var(--muted);font-weight:400;font-size:12px;border-left:1px solid var(--line-strong);padding-left:10px;text-transform:none;letter-spacing:0}
+  .spacer{flex:1}
+  .state{font:500 11px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+  .state b{color:var(--text);font-weight:600}
+  .state.rec b{color:var(--rec)} .state.ask b{color:var(--ask)}
+  .ai-note{font-size:10px;color:var(--muted)}
+
+  main{padding:16px 20px 32px;max-width:1500px;margin:0 auto}
+
+  .btn{border:1px solid var(--border-ctl);border-radius:0;padding:9px 16px;font-weight:600;font-size:11px;cursor:pointer;
+    background:transparent;color:var(--text);transition:background .12s,border-color .12s}
+  .btn:hover{background:rgba(255,255,255,.06);border-color:#fff}
+  .btn:active{background:rgba(255,255,255,.1)}
+  .btn:disabled{opacity:.4;cursor:not-allowed;background:transparent;border-color:var(--border-ctl)}
+  .btn.violet{background:#fff;color:#000;border-color:#fff}
+  .btn.violet:hover{background:#e4e4e7;border-color:#e4e4e7}
+  .btn.marigold{border-color:var(--ask);color:var(--ask)} .btn.marigold:hover{background:rgba(253,180,47,.12)}
+  .btn.tomato{border-color:var(--danger);color:var(--danger)} .btn.tomato:hover{background:rgba(255,51,85,.14)}
+  .btn.small{padding:6px 12px;font-size:10px}
+  select,input[type=text]{background:var(--surface-3);border:1px solid var(--border-ctl);border-radius:0;padding:8px 10px;width:100%;outline:none}
+  select:focus,input[type=text]:focus{border-color:var(--accent)}
+  select option{background:var(--surface-3)}
+  .fieldname{display:block;font-size:10px;font-weight:600;color:var(--muted);margin:0 0 6px}
+  .meter{height:4px;background:var(--surface-3);border:1px solid var(--hairline)}
+  .meter>div{height:100%;width:0;background:linear-gradient(90deg,#3e4a89,#1f9e89,#6ece58,#fde725);transition:width .1s linear}
+  .note{font-size:12px;color:var(--muted)}
+  .warn{font-size:12px;color:var(--warn)}
+
+  .cam{position:relative;background:#000;border:1px solid var(--hairline);overflow:hidden;aspect-ratio:16/9}
+  .cam img{width:100%;height:100%;object-fit:cover;display:block}
+  .cam .placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--muted);padding:24px;font-size:12px}
+  .cam .onair{position:absolute;left:8px;top:8px;display:flex;align-items:center;gap:6px;font:600 10px var(--mono);color:#fff;background:rgba(0,0,0,.7);padding:3px 8px;border:1px solid var(--hairline)}
+  .cam .onair i{width:8px;height:8px;background:var(--rec)}
+  .cam .onair.paused i{background:var(--faint)} .cam .onair.ask i{background:var(--ask)}
+
+  #setup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;align-items:start}
+  #setup>div{background:var(--surface);border:1px solid var(--hairline);padding:20px}
+  .ask-class{font-size:10px;font-weight:600;color:var(--muted);margin:0 0 8px}
+  #courseInput{font:600 28px/1.2 var(--ui);letter-spacing:-.02em;background:none;border:0;border-bottom:1px solid var(--border-ctl);padding:4px 0 10px}
+  #courseInput:focus{border-bottom-color:var(--accent)}
+  .setup-block{margin-top:24px}
+  .mic-row{display:grid;grid-template-columns:1fr;gap:8px}
+  #startBtn{margin-top:28px;padding:12px 24px;font-size:12px}
+  .fine{margin-top:18px;max-width:52ch;font-size:11.5px;color:var(--muted)}
+  .cam-controls{display:flex;gap:8px;margin-top:10px}
+  .cam-controls select{flex:1}
+
+  #live{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px;align-items:start}
+  .rail{position:sticky;top:16px;background:var(--surface);border:1px solid var(--hairline);padding:12px}
+  .cam-caption{display:flex;justify-content:space-between;margin-top:8px;font:11px var(--mono);color:var(--muted)}
+  .cam-caption select{width:auto;padding:2px 6px;font-size:11px;background:none;border-color:transparent;color:var(--muted);text-align:right}
+  .mic-line{display:flex;align-items:center;gap:10px;margin-top:16px;font:600 10px var(--ui);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .mic-line .meter{flex:1}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+  #askBtn{grid-column:1/-1;padding:12px}
+  .statusline{margin-top:12px;font:11px var(--mono);color:var(--ask);min-height:18px}
+
+  .notebook{display:flex;flex-direction:column;height:calc(100vh - 100px);min-height:460px;background:var(--surface);border:1px solid var(--hairline)}
+  .nb-head{display:flex;gap:16px;padding:0 14px;height:36px;align-items:center;background:var(--surface-2);border-bottom:1px solid var(--hairline)}
+  .nb-head h2{margin:0;font-weight:600;font-size:11px;color:var(--text)}
+  #countNote{font:11px var(--mono);color:var(--muted);margin-left:auto}
+  #feed{flex:1;overflow:auto;padding:8px 14px 16px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.12) transparent}
+  .entry{display:grid;grid-template-columns:56px minmax(0,78ch);gap:14px;padding:5px 0;border-bottom:1px solid var(--rule)}
+  .when{font:11px var(--mono);color:var(--muted);text-align:right;padding-top:3px;font-variant-numeric:tabular-nums}
+  .said{font-size:14px;line-height:1.6;color:var(--text)}
+  .slide-entry{margin:6px 0}
+  .slide-entry figure{margin:0;display:flex;gap:14px;align-items:flex-start;border-left:2px solid var(--accent);padding-left:12px}
+  .slide-entry img{width:200px;border:1px solid var(--hairline);cursor:zoom-in;flex:none}
+  .slide-entry figcaption{font-size:12px;color:var(--text-2);white-space:pre-wrap}
+  .qa-entry{margin:6px 0}
+  .qa-block{border-left:2px solid var(--ask);padding-left:12px}
+  .qa-block .q{font-size:12px;color:var(--muted)}
+  .qa-block .a{font-size:14px;line-height:1.55;margin-top:4px}
+  .empty{color:var(--muted);font-size:13px;margin:24px 0 0 70px;max-width:44ch}
+  .askline{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--hairline);background:var(--surface-2)}
+
+  #finishing{min-height:55vh;display:grid;place-items:center;text-align:center}
+  #finishing h2{font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.1em;margin:16px 0 6px}
+  .bigeye{width:64px;height:68px}
+  .bigeye .pupil{fill:var(--accent)}
+
+  #done{max-width:1200px}
+  .handout-top{display:flex;gap:20px;align-items:flex-start;padding:16px 20px;background:var(--surface);border:1px solid var(--hairline)}
+  .saved-note{font:11px var(--mono);color:var(--muted);margin:0 0 8px}
+  #sheetTitle{font-weight:700;font-size:28px;line-height:1.15;letter-spacing:-.02em;margin:0 0 10px;text-wrap:balance}
+  #sheetTldr{font-size:14px;line-height:1.6;color:var(--text-2);max-width:72ch;margin:0}
+  #sheetNote{margin-top:10px}
+  .handout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;padding-top:16px}
+  .handout section{margin-bottom:16px;background:var(--surface);border:1px solid var(--hairline)}
+  .handout h3{font-size:11px;font-weight:600;margin:0;padding:0 14px;height:34px;display:flex;align-items:center;background:var(--surface-2);border-bottom:1px solid var(--hairline)}
+  .handout section>*:not(h3){margin-left:14px;margin-right:14px}
+  .handout section>:last-child{margin-bottom:14px}
+  .handout section>h3+*{margin-top:12px}
+  .handout ul,.handout ol{padding-left:22px;font-size:13.5px;line-height:1.6}
+  .handout li{margin:0 0 6px}
+  .handout li::marker{color:var(--accent);font-family:var(--mono)}
+  dl.terms{font-size:13px;line-height:1.55}
+  dl.terms dt{font-weight:600;color:var(--accent);margin-top:10px}
+  dl.terms dt:first-child{margin-top:0}
+  dl.terms dd{margin:2px 0 0;color:var(--text-2)}
+  .todo{display:flex;gap:10px;align-items:flex-start;margin:0 0 10px;font-size:13.5px;cursor:pointer}
+  .todo input{margin-top:4px;width:14px;height:14px;accent-color:var(--accent);flex:none}
+  .todo small{display:block;font:11px var(--mono);color:var(--muted)}
+  .todo input:checked + span{text-decoration:line-through;color:var(--muted)}
+  .reviews{font:12px/1.8 var(--mono)}
+  .files{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+  .files a{text-decoration:none;color:inherit}
+  #doneQA .qa-block{margin-top:12px}
+
+  #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.94);display:grid;place-items:center;z-index:20;cursor:zoom-out}
+  #lightbox img{max-width:92vw;max-height:88vh;border:1px solid var(--hairline)}
+
+  @media (max-width:1000px){
+    #setup,#live,.handout{grid-template-columns:1fr}
+    .rail{position:static} .notebook{height:70vh}
+    header{flex-wrap:wrap;height:auto;padding:10px 14px} main{padding:12px 14px}
+    #courseInput{font-size:24px} #sheetTitle{font-size:24px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg class="eye" id="eye" viewBox="80 20 478 504" role="img" aria-label="Third Eye recording light">
+      <path class="mark" fill-rule="evenodd" d="M109 430.8 L109 432.8 L314.5 519.2 L317.5 519.2 L522.2 433.0 L522.2 431.0 L420.2 431.0 L317.2 474.2 L314.8 474.2 L212.2 431.0Z M91 123.0 L90.8 125.8 L92.2 135.8 L93.2 136.2 L107.8 137.2 L117.5 139.2 L133.2 144.0 L154.2 152.2 L166.5 158.8 L174.8 165.2 L180 172.2 L183.2 178.2 L186 185.5 L187.2 192.0 L187.2 203.5 L185.8 210.5 L182.8 217.8 L179 223.2 L174.5 228.2 L169.5 232.0 L164.5 234.5 L153.8 237.8 L138.8 237.8 L123.2 233.8 L121.2 233.8 L121.2 236.0 L137.5 257.5 L157.2 288.8 L173.5 317.2 L188.8 347.8 L195.8 363.8 L198 363.5 L200.8 297.5 L201.2 236.0 L200 184.5 L201.5 183.0 L204 183.8 L208.2 186.8 L228 203.0 L247.5 222.0 L267.2 244.2 L287 268.8 L303 290.0 L305.5 292.5 L311.5 301.2 L330 322.8 L350.5 342.2 L366.5 354.2 L378.2 361.5 L402 372.8 L423.8 379.5 L447 382.8 L458.5 383.2 L475.5 382.8 L490.8 380.2 L497.8 377.8 L504.5 374.2 L508.2 371.8 L518.5 362.2 L525 352.8 L529.8 341.5 L534 325.8 L534.2 312.8 L533 299.2 L529.2 286.2 L525.8 278.0 L523.2 274.5 L517.2 268.2 L509.2 262.2 L499.8 258.0 L489 256.2 L478 256.5 L471.8 257.8 L466.8 259.8 L461.5 262.5 L456 266.5 L446.5 276.8 L441.2 286.8 L439 296.2 L439 302.0 L441 310.2 L443.2 315.0 L448 321.5 L454 327.0 L462 331.8 L468.8 333.5 L475.5 333.0 L480 331.2 L485.5 327.2 L488 324.5 L490.5 320.2 L493.2 309.8 L493.2 303.5 L491.8 297.8 L490.2 294.5 L488.5 292.5 L485 290.0 L479.2 287.8 L470.5 287.2 L459.2 289.5 L458.2 288.5 L458.5 287.0 L460.2 284.5 L465.8 279.2 L473 275.0 L477.5 273.5 L481 273.0 L490.2 273.5 L499 277.2 L502.5 279.8 L507.5 284.8 L511.8 291.5 L515.5 303.0 L516.5 312.0 L516.2 320.8 L514.8 329.5 L510.2 339.8 L506.8 344.8 L499.8 351.8 L490.8 358.2 L484 361.5 L475.8 364.2 L462.2 366.2 L451 366.5 L431.2 363.2 L418 359.2 L409 355.8 L389.2 346.2 L381.8 341.8 L362.8 328.0 L342.5 309.0 L325.5 290.2 L316.8 279.5 L308.2 270.8 L298 258.2 L294 254.5 L285.2 243.8 L244.5 198.0 L244 196.2 L245 195.2 L246.2 195.2 L261.8 200.2 L279.2 203.8 L306.2 207.0 L339.8 206.8 L358.8 204.8 L385.5 200.5 L403.5 196.0 L418 191.5 L447.8 180.5 L482.5 163.5 L502 152.0 L512.5 148.5 L520.2 148.0 L524.2 148.2 L529 149.5 L538.2 154.0 L543 157.2 L549.5 163.0 L551.5 163.0 L552.2 133.0 L551.5 132.0 L538 131.0 L509.2 126.0 L496 122.8 L457.8 110.5 L403.8 88.5 L376 78.5 L354.2 72.8 L338.5 69.8 L316 67.8 L293 68.2 L282 69.5 L265.2 72.8 L235.2 81.5 L171.2 107.2 L155.8 112.8 L148.2 114.2 L134.2 118.2 L112.8 121.8 L91.5 122.5Z M491.5 141.0 L490 142.8 L482.2 146.2 L432.8 166.0 L427.2 167.2 L415.8 171.5 L396.8 177.2 L380.5 181.5 L362.8 185.0 L333.5 188.2 L304.8 188.5 L287.5 187.0 L269 184.5 L253 180.8 L232 174.2 L210.2 166.2 L182.8 153.2 L156.8 139.2 L146.5 133.0 L145.5 131.8 L145.5 130.8 L146.5 129.8 L153.2 128.0 L172.5 121.2 L232 98.0 L241.8 94.8 L243.5 94.8 L244.5 95.5 L244.5 97.0 L241 102.2 L237.8 108.8 L235.8 115.2 L235.2 128.8 L238.2 140.5 L240.8 145.5 L245.8 152.2 L252.8 159.5 L258 163.2 L269 168.5 L274 170.2 L288 172.8 L297 172.8 L307 171.2 L316.8 168.2 L323.5 165.2 L333 158.8 L337.8 154.2 L341.8 149.2 L347 139.0 L348.8 133.2 L349.8 126.8 L349 115.2 L346 106.5 L342.5 99.8 L340.2 96.5 L334.5 90.5 L334.5 89.2 L335.2 88.5 L337.5 88.5 L360.8 93.5 L379 99.2 L456 129.0 L490.2 139.2Z M84.2 84.5 L88.2 86.8 L95.8 89.2 L102 90.2 L114.5 90.5 L127.2 89.2 L155.2 82.0 L182.5 73.2 L196 68.0 L221.8 59.2 L237.5 55.0 L264.8 49.5 L284.8 47.2 L294.8 46.8 L324.8 47.2 L343.2 49.2 L364 52.8 L392.2 59.2 L432.5 73.5 L460.2 81.2 L476 84.8 L490.2 87.0 L511.5 87.8 L521 86.8 L526 85.8 L536.5 82.0 L542 79.0 L542 77.0 L531.8 77.5 L514.8 77.2 L503.5 76.0 L492.2 73.8 L473.2 68.0 L433.5 50.8 L416.2 44.2 L393 37.2 L371.8 32.0 L346 27.2 L325.2 25.0 L295.8 24.5 L283 25.0 L264.8 27.2 L244.5 31.8 L233.2 35.2 L214.8 42.5 L176 59.5 L135.5 74.0 L124.5 77.0 L107.2 80.2 L84.2 82.5Z"/>
+      <circle class="pupil" cx="292.0" cy="120.9" r="57.7"/>
+    </svg>
+    Third Eye
+    <span class="classname" id="hdrCourse"></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="state" id="state"><b id="stateWord">Not recording</b> <span id="timer"></span></div>
+  <div class="ai-note" id="aiNote"></div>
+</header>
+
+<main>
+  <!-- ============ SETUP ============ -->
+  <section id="setup">
+    <div>
+      <p class="ask-class">Which class is this?</p>
+      <input type="text" id="courseInput" maxlength="60" aria-label="Class name" autocomplete="off">
+
+      <div class="setup-block">
+        <label class="fieldname" for="micSelect">Microphone</label>
+        <div class="mic-row">
+          <select id="micSelect"></select>
+          <div class="meter"><div id="micMeterSetup"></div></div>
+        </div>
+        <p class="note" id="micHint" style="margin:8px 0 0">Say something. The line should move.</p>
+        <p class="warn hidden" id="micErr"></p>
+      </div>
+
+      <button class="btn violet" id="startBtn">Loading speech model…</button>
+      <p class="fine">The eye in the corner is your recording light. Its pupil glows red
+        whenever Third Eye is recording. Check your school's rules before recording a lecture;
+        accessibility services can often approve it as an accommodation.</p>
+    </div>
+
+    <div>
+      <div class="cam" id="camSlotSetup"></div>
+      <div class="cam-controls">
+        <select id="camSelectSetup" aria-label="Camera"></select>
+        <button class="btn small quiet" id="rescanBtn">Look again</button>
+      </div>
+      <p class="note" style="margin-top:10px">Aim it at the board or the projector. Third Eye saves a slide
+        when the picture changes and then holds still.</p>
+    </div>
+  </section>
+
+  <!-- ============ LIVE ============ -->
+  <section id="live" class="hidden">
+    <div class="rail">
+      <div class="cam" id="camSlotLive"></div>
+      <div class="cam-caption">
+        <span id="slideNote">No slides yet</span>
+        <select id="camSelectLive" aria-label="Camera"></select>
+      </div>
+      <div class="mic-line"><span>Mic</span><div class="meter"><div id="micMeterLive"></div></div></div>
+      <div class="actions">
+        <button class="btn marigold" id="askBtn">Ask a question</button>
+        <button class="btn quiet" id="pauseBtn">Pause</button>
+        <button class="btn tomato" id="endBtn">End lecture</button>
+      </div>
+      <div class="statusline" id="status"></div>
+    </div>
+
+    <div class="notebook">
+      <div class="nb-head"><h2 id="nbTitle">Notes</h2><span id="countNote"></span></div>
+      <div id="feed"></div>
+      <div class="askline">
+        <input type="text" id="askInput" aria-label="Type a question about the lecture">
+        <button class="btn small violet" id="askSend">Ask</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINISHING ============ -->
+  <section id="finishing" class="hidden">
+    <div>
+      <svg class="eye bigeye" viewBox="80 20 478 504" aria-hidden="true">
+        <path class="mark" fill-rule="evenodd" d="M109 430.8 L109 432.8 L314.5 519.2 L317.5 519.2 L522.2 433.0 L522.2 431.0 L420.2 431.0 L317.2 474.2 L314.8 474.2 L212.2 431.0Z M91 123.0 L90.8 125.8 L92.2 135.8 L93.2 136.2 L107.8 137.2 L117.5 139.2 L133.2 144.0 L154.2 152.2 L166.5 158.8 L174.8 165.2 L180 172.2 L183.2 178.2 L186 185.5 L187.2 192.0 L187.2 203.5 L185.8 210.5 L182.8 217.8 L179 223.2 L174.5 228.2 L169.5 232.0 L164.5 234.5 L153.8 237.8 L138.8 237.8 L123.2 233.8 L121.2 233.8 L121.2 236.0 L137.5 257.5 L157.2 288.8 L173.5 317.2 L188.8 347.8 L195.8 363.8 L198 363.5 L200.8 297.5 L201.2 236.0 L200 184.5 L201.5 183.0 L204 183.8 L208.2 186.8 L228 203.0 L247.5 222.0 L267.2 244.2 L287 268.8 L303 290.0 L305.5 292.5 L311.5 301.2 L330 322.8 L350.5 342.2 L366.5 354.2 L378.2 361.5 L402 372.8 L423.8 379.5 L447 382.8 L458.5 383.2 L475.5 382.8 L490.8 380.2 L497.8 377.8 L504.5 374.2 L508.2 371.8 L518.5 362.2 L525 352.8 L529.8 341.5 L534 325.8 L534.2 312.8 L533 299.2 L529.2 286.2 L525.8 278.0 L523.2 274.5 L517.2 268.2 L509.2 262.2 L499.8 258.0 L489 256.2 L478 256.5 L471.8 257.8 L466.8 259.8 L461.5 262.5 L456 266.5 L446.5 276.8 L441.2 286.8 L439 296.2 L439 302.0 L441 310.2 L443.2 315.0 L448 321.5 L454 327.0 L462 331.8 L468.8 333.5 L475.5 333.0 L480 331.2 L485.5 327.2 L488 324.5 L490.5 320.2 L493.2 309.8 L493.2 303.5 L491.8 297.8 L490.2 294.5 L488.5 292.5 L485 290.0 L479.2 287.8 L470.5 287.2 L459.2 289.5 L458.2 288.5 L458.5 287.0 L460.2 284.5 L465.8 279.2 L473 275.0 L477.5 273.5 L481 273.0 L490.2 273.5 L499 277.2 L502.5 279.8 L507.5 284.8 L511.8 291.5 L515.5 303.0 L516.5 312.0 L516.2 320.8 L514.8 329.5 L510.2 339.8 L506.8 344.8 L499.8 351.8 L490.8 358.2 L484 361.5 L475.8 364.2 L462.2 366.2 L451 366.5 L431.2 363.2 L418 359.2 L409 355.8 L389.2 346.2 L381.8 341.8 L362.8 328.0 L342.5 309.0 L325.5 290.2 L316.8 279.5 L308.2 270.8 L298 258.2 L294 254.5 L285.2 243.8 L244.5 198.0 L244 196.2 L245 195.2 L246.2 195.2 L261.8 200.2 L279.2 203.8 L306.2 207.0 L339.8 206.8 L358.8 204.8 L385.5 200.5 L403.5 196.0 L418 191.5 L447.8 180.5 L482.5 163.5 L502 152.0 L512.5 148.5 L520.2 148.0 L524.2 148.2 L529 149.5 L538.2 154.0 L543 157.2 L549.5 163.0 L551.5 163.0 L552.2 133.0 L551.5 132.0 L538 131.0 L509.2 126.0 L496 122.8 L457.8 110.5 L403.8 88.5 L376 78.5 L354.2 72.8 L338.5 69.8 L316 67.8 L293 68.2 L282 69.5 L265.2 72.8 L235.2 81.5 L171.2 107.2 L155.8 112.8 L148.2 114.2 L134.2 118.2 L112.8 121.8 L91.5 122.5Z M491.5 141.0 L490 142.8 L482.2 146.2 L432.8 166.0 L427.2 167.2 L415.8 171.5 L396.8 177.2 L380.5 181.5 L362.8 185.0 L333.5 188.2 L304.8 188.5 L287.5 187.0 L269 184.5 L253 180.8 L232 174.2 L210.2 166.2 L182.8 153.2 L156.8 139.2 L146.5 133.0 L145.5 131.8 L145.5 130.8 L146.5 129.8 L153.2 128.0 L172.5 121.2 L232 98.0 L241.8 94.8 L243.5 94.8 L244.5 95.5 L244.5 97.0 L241 102.2 L237.8 108.8 L235.8 115.2 L235.2 128.8 L238.2 140.5 L240.8 145.5 L245.8 152.2 L252.8 159.5 L258 163.2 L269 168.5 L274 170.2 L288 172.8 L297 172.8 L307 171.2 L316.8 168.2 L323.5 165.2 L333 158.8 L337.8 154.2 L341.8 149.2 L347 139.0 L348.8 133.2 L349.8 126.8 L349 115.2 L346 106.5 L342.5 99.8 L340.2 96.5 L334.5 90.5 L334.5 89.2 L335.2 88.5 L337.5 88.5 L360.8 93.5 L379 99.2 L456 129.0 L490.2 139.2Z M84.2 84.5 L88.2 86.8 L95.8 89.2 L102 90.2 L114.5 90.5 L127.2 89.2 L155.2 82.0 L182.5 73.2 L196 68.0 L221.8 59.2 L237.5 55.0 L264.8 49.5 L284.8 47.2 L294.8 46.8 L324.8 47.2 L343.2 49.2 L364 52.8 L392.2 59.2 L432.5 73.5 L460.2 81.2 L476 84.8 L490.2 87.0 L511.5 87.8 L521 86.8 L526 85.8 L536.5 82.0 L542 79.0 L542 77.0 L531.8 77.5 L514.8 77.2 L503.5 76.0 L492.2 73.8 L473.2 68.0 L433.5 50.8 L416.2 44.2 L393 37.2 L371.8 32.0 L346 27.2 L325.2 25.0 L295.8 24.5 L283 25.0 L264.8 27.2 L244.5 31.8 L233.2 35.2 L214.8 42.5 L176 59.5 L135.5 74.0 L124.5 77.0 L107.2 80.2 L84.2 82.5Z"/>
+        <circle class="pupil" cx="292.0" cy="120.9" r="57.7"/>
+      </svg>
+      <h2>Writing your study sheet</h2>
+      <p class="note">Finishing the transcript and pulling out the key points, terms and homework.</p>
+    </div>
+  </section>
+
+  <!-- ============ DONE ============ -->
+  <section id="done" class="hidden">
+    <div class="handout-top">
+      <div style="flex:1">
+        <p class="saved-note" id="savedNote">Saved</p>
+        <h1 id="sheetTitle"></h1>
+        <p id="sheetTldr"></p>
+        <p class="warn hidden" id="sheetNote"></p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn violet" id="newBtn">New lecture</button>
+        <button class="btn quiet" id="quitBtn">Quit</button>
+      </div>
+    </div>
+
+    <div class="handout">
+      <div>
+        <section><h3>Key points</h3><ul id="sheetPoints"></ul></section>
+        <section><h3>Test yourself</h3><ol id="sheetQs"></ol>
+          <p class="note" style="margin-top:10px">Answer out loud before you look at your notes.</p></section>
+        <section id="confusingCard" class="hidden"><h3>Ask the professor</h3><ul id="sheetConfusing"></ul></section>
+      </div>
+      <div>
+        <section><h3>Key terms</h3><dl class="terms" id="sheetTerms"></dl></section>
+        <section><h3>Homework and deadlines</h3><div id="sheetTodos"></div></section>
+        <section><h3>Review again on</h3><div class="reviews" id="sheetReviews"></div></section>
+        <section><h3>Files</h3><div class="files" id="downloads"></div><p class="note" id="folderHint"></p></section>
+        <section><h3>Ask about this lecture</h3>
+          <div class="askline" style="border:0;padding:0;background:none"><input type="text" id="askInputDone" aria-label="Ask about this lecture"
+            style="border-bottom:1px solid var(--border-ctl)"><button class="btn small violet" id="askSendDone">Ask</button></div>
+          <div id="doneQA"></div></section>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="lightbox" class="hidden"><img id="lightImg" alt=""></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let S = {}, version = -1, entries = [], lastCamKey = null, lastLists = {}, courseTouched = false, sheetShown = false;
+
+async function post(path, body = {}) {
+  try { await fetch(path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}); }
+  catch (e) {}
+  poll();
+}
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+function clock(s) {   // 0:07, 12:31, 1:02:09
+  s = Math.floor(s); const h = s / 3600 | 0, m = (s % 3600) / 60 | 0, sec = String(s % 60).padStart(2, '0');
+  return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
+}
+const toSeconds = hms => hms.split(':').reduce((a, b) => a * 60 + Number(b), 0);
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/* ---------- one camera picture, moved between the setup and live screens ---------- */
+const camBox = el('div'); camBox.style.cssText = 'position:absolute;inset:0';
+const camImg = el('img'); camImg.alt = 'Camera view';
+const camPh = el('div', 'placeholder');
+const onAir = el('div', 'onair'); onAir.append(el('i'), el('span'));
+camBox.append(camImg, camPh, onAir);
+camImg.onerror = () => setTimeout(() => { lastCamKey = null; }, 1000);
+function placeCamera(slotId) { const slot = $(slotId); if (camBox.parentNode !== slot) slot.appendChild(camBox); }
+
+function updateCamera() {
+  const c = S.camera, showing = c.index !== null && c.ok, key = c.index + ':' + c.ok;
+  if (key !== lastCamKey) {
+    lastCamKey = key;
+    if (showing) { camImg.src = '/video?' + Date.now(); camImg.classList.remove('hidden'); }
+    else { camImg.removeAttribute('src'); camImg.classList.add('hidden'); }
+  }
+  camPh.classList.toggle('hidden', showing);
+  camPh.innerHTML = c.index === null ? 'Camera is off'
+    : c.scanning ? 'Opening the camera…'
+    : `Camera ${c.index} isn't sending a picture.<br>Pick another camera, or close Zoom, Teams or the Camera app if they're open.`;
+  const live = S.phase === 'recording';
+  onAir.className = 'onair ' + (live ? ({ASK: 'ask', PAUSED: 'paused'}[S.mode] || '') : 'hidden');
+  onAir.querySelector('span').textContent = {REC: 'Recording', ASK: 'Listening to you', PAUSED: 'Paused'}[S.mode] || '';
+}
+
+function fillSelect(sel, items, current) {
+  const sig = JSON.stringify(items) + current;
+  if (lastLists[sel.id] === sig) return;
+  lastLists[sel.id] = sig;
+  sel.innerHTML = '';
+  for (const [value, label] of items) {
+    const o = el('option', null, label); o.value = value;
+    if (String(value) === String(current)) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+function cameraOptions() {
+  const c = S.camera, opts = [];
+  const list = [...new Set([...(c.list || []), ...(c.index !== null ? [c.index] : [])])].sort();
+  for (const i of list) opts.push([i, i === 0 ? 'Camera 0 (probably built in)' : `Camera ${i} (USB or phone)`]);
+  if (c.scanning) opts.push(['scan', 'Looking for cameras…']);
+  opts.push(['off', 'No camera']);
+  return opts;
+}
+
+/* ---------- the notebook ---------- */
+function renderFeed() {
+  const feed = $('feed');
+  const nearBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 80;
+  feed.innerHTML = '';
+  if (!entries.length) feed.appendChild(el('p', 'empty', 'Notes appear here as soon as the professor starts talking.'));
+  let lines = 0;
+  for (const e of entries) {
+    const row = el('div', 'entry'); row.appendChild(el('div', 'when', clock(e.t)));
+    if (e.kind === 'speech') {
+      lines++; row.appendChild(el('div', 'said', e.text));
+    } else if (e.kind === 'slide') {
+      row.classList.add('slide-entry');
+      const fig = el('figure'), img = el('img');
+      img.src = '/img/' + encodeURIComponent(e.img); img.alt = 'Captured slide'; img.onclick = () => openLight(img.src);
+      fig.append(img, el('figcaption', null, e.text || 'No readable text on this one.'));
+      row.appendChild(fig);
+    } else {
+      row.classList.add('qa-entry'); row.appendChild(qaNode(e));
+    }
+    feed.appendChild(row);
+  }
+  $('countNote').textContent = lines ? `${plural(lines, 'line')}, ${plural(S.slides, 'slide')}` : '';
+  if (nearBottom) feed.scrollTop = feed.scrollHeight;
+  const dq = $('doneQA'); dq.innerHTML = '';
+  for (const e of entries.filter(e => e.kind === 'qa').slice(-4)) dq.appendChild(qaNode(e));
+}
+function qaNode(e) {
+  const b = el('div', 'qa-block');
+  b.append(el('div', 'q', 'You asked: ' + e.q), el('div', 'a', e.a));
+  return b;
+}
+function openLight(src) { $('lightImg').src = src; $('lightbox').classList.remove('hidden'); }
+$('lightbox').onclick = () => $('lightbox').classList.add('hidden');
+
+/* ---------- the study sheet ---------- */
+function renderSheet() {
+  const sh = S.sheet || {};
+  $('sheetTitle').textContent = sh.title || S.course;
+  $('sheetTldr').textContent = sh.tldr || '';
+  $('sheetNote').textContent = sh._note || ''; $('sheetNote').classList.toggle('hidden', !sh._note);
+  $('savedNote').textContent = `Saved after ${clock(toSeconds(S.elapsed))} of lecture`;
+  const fill = (id, arr, fn) => { const p = $(id); p.innerHTML = ''; (arr || []).forEach(x => fn(x, p)); };
+  fill('sheetPoints', sh.key_points, (x, p) => p.appendChild(el('li', null, x)));
+  fill('sheetQs', sh.exam_questions, (x, p) => p.appendChild(el('li', null, x)));
+  fill('sheetTerms', sh.key_terms, (x, p) => { p.appendChild(el('dt', null, x.term)); p.appendChild(el('dd', null, x.definition)); });
+  fill('sheetTodos', sh.todos, (x, p) => {
+    const row = el('label', 'todo'), cb = el('input'); cb.type = 'checkbox';
+    const txt = el('span', null, x.task); txt.appendChild(el('small', null, `Due in about ${plural(x.due_in_days ?? 3, 'day')}`));
+    row.append(cb, txt); p.appendChild(row);
+  });
+  if (!(sh.todos || []).length) $('sheetTodos').appendChild(el('p', 'note', 'No homework or deadlines came up.'));
+  $('sheetReviews').innerHTML = '';
+  (S.reviews || []).forEach(r => $('sheetReviews').appendChild(el('div', null, r)));
+  fill('sheetConfusing', sh.confusing_parts, (x, p) => p.appendChild(el('li', null, x)));
+  $('confusingCard').classList.toggle('hidden', !(sh.confusing_parts || []).length);
+  const dl = $('downloads'); dl.innerHTML = '';
+  const files = S.files || {};
+  const add = (name, label, cls) => { const a = el('a'); a.href = '/files/' + name; a.appendChild(el('span', 'btn small ' + cls, label)); dl.appendChild(a); };
+  if (files.docx) add(files.docx, 'Study sheet for Word', 'violet');
+  if (files.ics) add(files.ics, 'Add review dates to calendar', 'quiet');
+  if (files.md) add(files.md, 'Study sheet as text', 'quiet');
+  add('live_notes.md', 'Full transcript', 'quiet');
+  $('folderHint').textContent = 'Also saved in ' + (S.folder || '');
+}
+
+/* ---------- refresh ---------- */
+async function poll() {
+  try { const r = await fetch('/state?v=' + version); S = await r.json(); }
+  catch (e) { $('stateWord').textContent = 'Lost connection to Third Eye. Is the black window still open?'; return; }
+  if (S.entries) { entries = S.entries; version = S.version; renderFeed(); }
+
+  const screen = S.phase === 'recording' ? 'live' : S.phase;
+  for (const p of ['setup', 'live', 'finishing', 'done']) $(p).classList.toggle('hidden', screen !== p);
+  if (S.phase === 'setup') { placeCamera('camSlotSetup'); sheetShown = false; version = -1; entries = []; }
+  if (S.phase === 'recording') placeCamera('camSlotLive');
+  if (S.phase === 'done' && !sheetShown) { renderSheet(); sheetShown = true; }
+
+  // header: the eye is the recording light
+  const live = S.phase === 'recording';
+  const eyeState = live ? ({REC: 'rec', ASK: 'ask', PAUSED: 'paused'}[S.mode] || '') : '';
+  $('eye').setAttribute('class', 'eye ' + eyeState);
+  $('state').className = 'state ' + eyeState;
+  $('stateWord').textContent = live ? ({REC: 'Recording', ASK: 'Listening to you', PAUSED: 'Paused'}[S.mode] || 'Recording')
+    : ({setup: 'Not recording', finishing: 'Saving', done: 'Saved'}[S.phase]);
+  $('timer').textContent = live || S.phase === 'finishing' ? clock(toSeconds(S.elapsed)) : '';
+  $('hdrCourse').textContent = S.phase === 'setup' ? '' : S.course;
+  $('nbTitle').textContent = S.course || 'Notes';
+  $('aiNote').textContent = S.ai === 'offline' ? 'Answers from your notes only' : `Answers by ${S.ai}`;
+
+  updateCamera();
+  const camOpts = cameraOptions(), camCur = S.camera.index === null ? 'off' : S.camera.index;
+  fillSelect($('camSelectSetup'), camOpts, camCur); fillSelect($('camSelectLive'), camOpts, camCur);
+  $('rescanBtn').disabled = S.camera.scanning;
+  $('slideNote').textContent = S.slides ? `${plural(S.slides, 'slide')} saved` : 'No slides yet';
+
+  const lvl = Math.round((S.mic.level || 0) * 100) + '%';
+  $('micMeterSetup').style.width = lvl; $('micMeterLive').style.width = live && !S.paused ? lvl : '0%';
+  const micOpts = S.mic.file ? [['file', 'Recorded lecture: ' + S.mic.file]]
+                             : [['default', 'Default microphone'], ...S.mic.list.map(([i, n]) => [i, n])];
+  fillSelect($('micSelect'), micOpts, S.mic.file ? 'file' : (S.mic.index ?? 'default'));
+  $('micSelect').disabled = !!S.mic.file;
+  $('micHint').textContent = S.mic.file ? 'Using the recorded lecture instead of the mic. It plays when you start.'
+                                        : 'Say something. The line should move.';
+  $('micErr').textContent = S.mic.error ? "Third Eye can't use this microphone: " + S.mic.error : '';
+  $('micErr').classList.toggle('hidden', !S.mic.error);
+
+  if (S.phase === 'setup') {
+    if (!courseTouched && S.course && !$('courseInput').value) $('courseInput').value = S.course;
+    const sb = $('startBtn');
+    if (S.model === 'ready') { sb.disabled = !!S.mic.error; sb.textContent = 'Start recording'; }
+    else if (S.model === 'loading') { sb.disabled = true; sb.textContent = 'Loading speech model…'; }
+    else { sb.disabled = true; sb.textContent = "Speech model didn't load. See the black window."; }
+  }
+
+  const ab = $('askBtn');
+  ab.disabled = S.asking;
+  ab.innerHTML = S.ask_remaining > 0 ? `Listening… ${Math.ceil(S.ask_remaining)}`
+    : S.asking ? 'Working on it…' : 'Ask a question';
+  $('pauseBtn').textContent = S.paused ? 'Resume' : 'Pause';
+  $('status').textContent = live ? S.status : '';
+  $('askSend').disabled = $('askSendDone').disabled = S.asking;
+}
+
+/* ---------- events ---------- */
+$('courseInput').oninput = () => courseTouched = true;
+$('startBtn').onclick = () => post('/api/start', {course: $('courseInput').value.trim() || 'Lecture'});
+$('courseInput').onkeydown = e => { if (e.key === 'Enter' && !$('startBtn').disabled) $('startBtn').click(); };
+for (const id of ['camSelectSetup', 'camSelectLive'])
+  $(id).onchange = e => { if (e.target.value !== 'scan') { lastCamKey = null; post('/api/camera', {index: e.target.value}); } };
+$('rescanBtn').onclick = () => post('/api/rescan');
+$('micSelect').onchange = e => post('/api/mic', {index: e.target.value});
+$('askBtn').onclick = () => post('/api/ask');
+$('pauseBtn').onclick = () => post('/api/pause');
+$('endBtn').onclick = () => { if (confirm('End the lecture and write the study sheet?')) post('/api/end'); };
+$('newBtn').onclick = () => post('/api/new');
+$('quitBtn').onclick = () => { post('/api/quit');
+  document.body.innerHTML = '<p style="padding:48px;font-family:var(--read);font-size:18px;color:rgba(255,255,255,.56)">Third Eye is closed. You can close this tab.</p>'; };
+function sendText(input) { const q = input.value.trim(); if (q) { post('/api/ask_text', {q}); input.value = ''; } }
+$('askSend').onclick = () => sendText($('askInput'));
+$('askSendDone').onclick = () => sendText($('askInputDone'));
+$('askInput').onkeydown = e => { if (e.key === 'Enter') sendText(e.target); };
+$('askInputDone').onkeydown = e => { if (e.key === 'Enter') sendText(e.target); };
+
+poll(); setInterval(poll, 400);
+</script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Third Eye">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="stylesheet" href="./css/app.css">
+<title>Third Eye</title>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg class="eye" id="eye" viewBox="0 0 24 24" aria-label="Recording light"><path class="mark" d="M1 12s4.2-7 11-7 11 7 11 7-4.2 7-11 7S1 12 1 12z" fill="none" stroke-width="1.6"/><circle class="pupil" cx="12" cy="12" r="3.6"/></svg>
+    <span>Third Eye</span><span class="course" id="hdrCourse"></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="state" id="state"><b id="stateWord">Not recording</b> <span id="timer"></span></div>
+</header>
+<div id="toast" class="toast hidden" role="status"></div>
+
+<main>
+  <!-- ===== RECORD ===== -->
+  <section id="v-record" class="view">
+    <div id="setup" class="stack">
+      <div class="panel">
+        <h2 class="panel-title">Class</h2>
+        <div class="pad">
+          <input type="text" id="courseInput" maxlength="60" placeholder="Which class is this?" autocomplete="off" autocapitalize="words" aria-label="Class name">
+          <p class="note" id="supportNote"></p>
+          <button class="btn primary big" id="startBtn">Start recording</button>
+          <p class="fine">The eye in the corner is your recording light. It glows red while Third Eye records.
+            Check your school's rules before recording a lecture; accessibility services can often approve it.
+            Keep this screen open and unlocked. iPhone stops recording when it sleeps.</p>
+        </div>
+      </div>
+      <div class="panel">
+        <h2 class="panel-title">Setup</h2>
+        <div class="pad">
+          <label class="field-label" for="camSelect">Camera</label>
+          <select id="camSelect"><option value="environment">Back camera (aim at the board)</option><option value="user">Front camera</option><option value="off">No camera</option></select>
+          <label class="field-label" for="fileInput" style="margin-top:14px">Or use a recording</label>
+          <input type="file" id="fileInput" accept="audio/*,video/*">
+          <p class="note">Pick an audio file to run a lecture without the microphone.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="live" class="stack hidden">
+      <div class="cam" id="camSlot"><div class="onair" id="onair"><i></i><span></span></div><div class="placeholder" id="camPh">Camera is off</div></div>
+      <div class="panel">
+        <div class="pad">
+          <div class="mic-line"><span>Mic</span><div class="meter"><div id="micMeter"></div></div><span id="slideNote" class="mono">0 slides</span></div>
+          <div class="actions">
+            <button class="btn warnbtn big" id="askBtn">Ask a question</button>
+            <button class="btn" id="pauseBtn">Pause</button>
+            <button class="btn danger" id="endBtn">End lecture</button>
+          </div>
+          <div class="statusline" id="status"></div>
+        </div>
+      </div>
+      <div class="panel notebook">
+        <h2 class="panel-title">Notes <span class="mono right" id="countNote"></span></h2>
+        <div id="feed"></div>
+        <div class="askline"><input type="text" id="askInput" placeholder="Type a question" aria-label="Type a question about the lecture" enterkeyhint="send"><button class="btn" id="askSend">Ask</button></div>
+      </div>
+    </div>
+
+    <div id="finishing" class="center hidden">
+      <svg class="eye big-eye" viewBox="0 0 24 24"><path class="mark" d="M1 12s4.2-7 11-7 11 7 11 7-4.2 7-11 7S1 12 1 12z" fill="none" stroke-width="1.2"/><circle class="pupil" cx="12" cy="12" r="3.6"/></svg>
+      <h2>Writing your study sheet</h2>
+      <p class="note">Finishing the transcript and pulling out the key points, terms and homework.</p>
+    </div>
+
+    <div id="done" class="stack hidden"></div>
+  </section>
+
+  <!-- ===== LECTURES ===== -->
+  <section id="v-lectures" class="view hidden">
+    <div id="lecList" class="stack"></div>
+    <div id="lecDetail" class="stack hidden"></div>
+  </section>
+
+  <!-- ===== SETTINGS ===== -->
+  <section id="v-settings" class="view hidden"><div id="settingsRoot" class="stack"></div></section>
+</main>
+
+<nav class="tabbar">
+  <button data-tab="record" class="on">Record</button>
+  <button data-tab="lectures">Lectures</button>
+  <button data-tab="settings">Settings</button>
+</nav>
+
+<div id="lightbox" class="hidden"><img id="lightImg" alt=""></div>
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>
