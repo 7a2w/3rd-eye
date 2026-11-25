@@ -59,6 +59,13 @@ AUTO_SPEAK_GAP = 45          # seconds between unprompted remarks
 AUTO_END_MINUTES = 10        # end the session after this much quiet (0 = never)
 AUTO_RESTART_SECONDS = 30    # after an automatic end, start a new session this many seconds later
 
+# ---------- Voice ----------
+# A natural Microsoft neural voice via edge-tts (free, needs internet). Others: en-US-EmmaNeural,
+# en-US-JennyNeural, en-GB-SoniaNeural. Set THIRD_EYE_VOICE="" to use the built-in system voice.
+VOICE = os.environ.get("THIRD_EYE_VOICE", "en-US-AvaMultilingualNeural")
+VOICE_RATE = "-6%"           # a little slower and calmer than default
+VOICE_PITCH = "-2Hz"
+
 # ---------- Study sheet reminders ----------
 REVIEW_DAYS = [1, 3, 7]      # spaced-repetition review reminders (days after lecture)
 REMINDER_HOUR = 18           # reminders fire at 6 pm local time

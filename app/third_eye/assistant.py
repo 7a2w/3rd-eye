@@ -189,10 +189,51 @@ def quick_answer(question: str, transcript: str, tasks=None) -> str:
 _speak_lock = threading.Lock()
 
 
+def _neural_voice(text: str) -> bool:
+    """Speak with a Microsoft neural voice through edge-tts. Needs internet; returns False if it can't."""
+    if not config.VOICE:
+        return False
+    try:
+        import asyncio
+        import io
+
+        import av
+        import edge_tts
+        import numpy as np
+        import sounddevice as sd
+    except ImportError:
+        return False
+    try:
+        async def fetch():
+            buf = bytearray()
+            tts = edge_tts.Communicate(text, config.VOICE, rate=config.VOICE_RATE, pitch=config.VOICE_PITCH)
+            async for chunk in tts.stream():
+                if chunk["type"] == "audio":
+                    buf += chunk["data"]
+            return bytes(buf)
+        mp3 = asyncio.run(fetch())
+        if not mp3:
+            return False
+        with av.open(io.BytesIO(mp3)) as f:
+            stream = f.streams.audio[0]
+            rate = stream.rate
+            pcm = np.concatenate([fr.to_ndarray().reshape(-1) for fr in f.decode(stream)]).astype(np.float32)
+        if pcm.dtype != np.float32 or np.abs(pcm).max() > 1.5:
+            pcm = pcm / 32768.0
+        sd.play(pcm, rate)
+        sd.wait()
+        return True
+    except Exception as e:
+        print(f"[speak] neural voice unavailable ({e}), using the system voice")
+        return False
+
+
 def speak(text: str):
-    """Say text out loud without freezing the app. Uses the OS voice; pyttsx3 if installed."""
+    """Say text out loud without freezing the app. Neural voice first, then the OS voice."""
     def _run():
         with _speak_lock:
+            if text.strip() and _neural_voice(text):
+                return
             system = platform.system()
             try:
                 if system == "Darwin":

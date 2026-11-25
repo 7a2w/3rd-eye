@@ -8,5 +8,6 @@ av==18.1.1       # newer PyAV breaks faster-whisper 1.2.1 audio loading
 # optional but recommended
 pytesseract      # reads slide/whiteboard text (also install the Tesseract program, see README)
 python-docx      # Word version of the study sheet
+edge-tts         # natural neural voice for spoken answers (free, needs internet)
 pyttsx3          # spoken answers on Windows/Linux (macOS uses the built-in "say")
 pywebview        # shows the dashboard in its own window instead of a browser tab

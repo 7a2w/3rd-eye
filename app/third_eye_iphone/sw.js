@@ -1,5 +1,5 @@
 // Cache-first app shell so the app opens offline after the first visit. API calls are never cached.
-const CACHE = 'thirdeye-v3';
+const CACHE = 'thirdeye-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './css/app.css',
   './js/app.js', './js/bus.js', './js/util.js', './js/settings.js', './js/capture.js', './js/slides.js', './js/notes.js',
   './js/ai.js', './js/transcribe.js', './js/ocr.js', './js/assistant.js', './js/brain.js', './js/studysheet.js',
