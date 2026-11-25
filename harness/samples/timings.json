@@ -1,0 +1,29 @@
+{
+  "duration": 146.1207709750567,
+  "sections": [
+    {
+      "start": 1.5,
+      "title": "BIOL 1010  |  Lecture 14"
+    },
+    {
+      "start": 15.63,
+      "title": "Glycolysis"
+    },
+    {
+      "start": 37.59,
+      "title": "Krebs cycle (citric acid cycle)"
+    },
+    {
+      "start": 64.42,
+      "title": "Electron transport chain"
+    },
+    {
+      "start": 100.15,
+      "title": "No oxygen? Fermentation"
+    },
+    {
+      "start": 124.98,
+      "title": "Before next class"
+    }
+  ]
+}

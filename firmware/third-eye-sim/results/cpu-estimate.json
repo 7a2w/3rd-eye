@@ -1,0 +1,27 @@
+{
+ "sleep": {
+  "samples": 2,
+  "cpu0": 1.2,
+  "cpu1": 0.6,
+  "cpu0_max": 2.3,
+  "cpu1_max": 1.0,
+  "wifi": false
+ },
+ "listen": {
+  "samples": 14,
+  "cpu0": 1.0,
+  "cpu1": 6.9,
+  "cpu0_max": 1.0,
+  "cpu1_max": 7.0,
+  "wifi": false
+ },
+ "listen + clip transfer over Wi-Fi": {
+  "samples": 8,
+  "cpu0": 7.8,
+  "cpu1": 9.3,
+  "cpu0_max": 10.7,
+  "cpu1_max": 10.1,
+  "wifi": true
+ },
+ "method": "QEMU -icount shift=2 (250 M instructions/s per core), FreeRTOS idle-task run time"
+}

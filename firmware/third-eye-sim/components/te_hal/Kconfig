@@ -1,0 +1,17 @@
+menu "Third Eye HAL"
+
+choice TE_PLATFORM
+    prompt "Hardware platform"
+    default TE_PLATFORM_SIM
+    help
+        SIM runs in Espressif QEMU with simulated camera, mics, buttons and
+        sensors, and TCP sockets instead of BLE and Wi-Fi.
+        XIAO uses the real Seeed XIAO ESP32S3 Sense drivers.
+
+config TE_PLATFORM_SIM
+    bool "QEMU simulation"
+config TE_PLATFORM_XIAO
+    bool "Seeed XIAO ESP32S3 Sense"
+endchoice
+
+endmenu
