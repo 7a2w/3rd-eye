@@ -1,8 +1,8 @@
 // Network calls to Claude and Gemini, ported from assistant.py. Keys come from settings only.
 import { getSettings } from './settings.js';
 
-const GEMINI_FAST = ['gemini-2.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-3.5-flash'];
-const GEMINI_SMART = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite'];
+const GEMINI_FAST = ['gemini-2.5-flash-lite', 'gemini-2.0-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+const GEMINI_SMART = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
 const lastGood = {};
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -24,7 +24,10 @@ export async function callClaude(system, user, maxTokens = 600) {
 async function geminiRequest(model, system, parts, maxTokens, key) {
   const gen = { maxOutputTokens: maxTokens };
   const body = { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts }], generationConfig: gen };
-  return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+  const url = key.startsWith('AQ.')
+    ? `https://aiplatform.googleapis.com/v1/publishers/google/models/${model}:generateContent`
+    : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  return fetch(url, {
     method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body),
   });
 }

@@ -55,6 +55,25 @@ def _small_gray(frame):
     return cv2.GaussianBlur(g, (5, 5), 0)
 
 
+_faces = None
+
+
+def _has_face(frame) -> bool:
+    """A close-up face means the camera is pointed at a person, not a board or screen."""
+    global _faces
+    if _faces is None:
+        try:
+            _faces = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+        except Exception:
+            _faces = False
+    if _faces is False or _faces.empty():
+        return False
+    small = cv2.resize(frame, (320, int(frame.shape[0] * 320 / frame.shape[1])))
+    gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+    found = _faces.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5, minSize=(40, 40))
+    return len(found) > 0
+
+
 class SlideWatcher:
     def __init__(self, out_dir: Path):
         self.out_dir = Path(out_dir)
@@ -84,7 +103,7 @@ class SlideWatcher:
         changed = self._last_saved is None or \
             change_percent(g, self._last_saved) > config.SLIDE_CHANGE_THRESHOLD
         if changed and self._stable >= config.SLIDE_STABLE_FRAMES and \
-                time.time() - self._last_time >= config.MIN_SECONDS_BETWEEN_SLIDES:
+                time.time() - self._last_time >= config.MIN_SECONDS_BETWEEN_SLIDES and not _has_face(frame):
             self._last_saved = g
             self._last_time = time.time()
             self.count += 1

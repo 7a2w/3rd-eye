@@ -54,6 +54,19 @@ def serve(app, port: int):
                 return self._json(app.state(since))
             if path == "/video":
                 return self._stream_video()
+            if path == "/api/obsidian":
+                import obsidian
+                vault, items = obsidian.notes()
+                return self._json({"vault": str(vault), "folder": obsidian.FOLDER,
+                                   "installed": obsidian.obsidian_installed(), "notes": items})
+            if path == "/api/obsidian/note":
+                import obsidian
+                import urllib.parse
+                name = urllib.parse.parse_qs(query).get("name", [""])[0]
+                text = obsidian.read_note(name)
+                if text is None:
+                    return self.send_error(404)
+                return self._send(text.encode("utf-8"), "text/plain; charset=utf-8")
             self.send_error(404)
 
         def _stream_video(self):
@@ -96,6 +109,9 @@ def serve(app, port: int):
             }
             if path in actions:
                 actions[path]()
+            elif path == "/api/obsidian/open":
+                import obsidian
+                obsidian.open_in_obsidian(str(body.get("name", "")))
             elif path == "/api/key":
                 return self._json(app.set_key(str(body.get("provider", "")), str(body.get("key", ""))))
             elif path == "/api/task":

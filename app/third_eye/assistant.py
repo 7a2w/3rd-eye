@@ -42,22 +42,29 @@ def call_claude(system: str, user: str, max_tokens: int = 600) -> str:
 
 # Live questions use the fast "Lite" models (thinking is off by default, so answers come back quickly).
 # Study sheets use the smarter Flash models. All of these have a free tier.
-GEMINI_FAST = ["gemini-2.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-3.5-flash"]
-GEMINI_SMART = ["gemini-2.5-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite"]
+GEMINI_FAST = ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"]
+GEMINI_SMART = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite"]
 _last_good = {}            # "fast"/"smart" -> model that answered last time (tried first next time)
 _no_thinking_cfg = set()   # models that rejected the thinking setting
 
 
+def gemini_url(model, key):
+    """Regular Gemini keys (AIza...) use the Gemini API; Google Cloud express keys (AQ...) use Vertex AI."""
+    if key.startswith("AQ."):
+        return f"https://aiplatform.googleapis.com/v1/publishers/google/models/{model}:generateContent"
+    return f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+
 def _gemini_request(model, system, user, max_tokens, timeout):
     gen = {"maxOutputTokens": max_tokens * 4 + 1024, "temperature": 0.4}
-    # Thinking makes answers slower. 2.5 Flash-Lite already has it off; ask the others to keep it low.
-    if model != "gemini-2.5-flash-lite" and model not in _no_thinking_cfg:
-        gen["thinkingConfig"] = {"thinkingLevel": "low"}
+    # Thinking makes answers slower; switch it off where the model allows.
+    if model.startswith("gemini-2.5-flash") and model not in _no_thinking_cfg:
+        gen["thinkingConfig"] = {"thinkingBudget": 0}
     body = {"systemInstruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": user}]}],
             "generationConfig": gen}
     req = urllib.request.Request(
-        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+        gemini_url(model, config.GEMINI_API_KEY),
         data=json.dumps(body).encode(), method="POST",
         headers={"x-goog-api-key": config.GEMINI_API_KEY, "content-type": "application/json"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:

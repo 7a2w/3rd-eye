@@ -4,7 +4,7 @@ Writes each finished session into an Obsidian vault as a normal note.
 The vault is found in this order:
   1. OBSIDIAN_VAULT environment variable (a folder path)
   2. the vault Obsidian last had open (read from Obsidian's own obsidian.json)
-If neither exists, nothing is written.
+  3. Documents/Third Eye Vault, created if needed (open it in Obsidian with "Open folder as vault")
 
 Inside the vault, notes go to "Third Eye/":
   Third Eye/2026-11-25 1432 Team sync with Sam.md   summary, tasks, transcript link
@@ -21,6 +21,7 @@ from datetime import datetime
 from pathlib import Path
 
 FOLDER = "Third Eye"
+DEFAULT_VAULT = Path.home() / "Documents" / "Third Eye Vault"
 
 
 def _config_paths():
@@ -49,7 +50,52 @@ def find_vault():
             p = Path(v.get("path", ""))
             if p.is_dir():
                 return p
-    return None
+    p = DEFAULT_VAULT
+    (p / ".obsidian").mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def obsidian_installed():
+    if platform.system() == "Windows":
+        local = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs/Obsidian/Obsidian.exe"
+        return local.exists() or any(c.exists() for c in _config_paths())
+    if platform.system() == "Darwin":
+        return Path("/Applications/Obsidian.app").exists()
+    return shutil.which("obsidian") is not None or any(c.exists() for c in _config_paths())
+
+
+def notes():
+    """Session notes in the vault, newest first."""
+    vault = find_vault()
+    base = vault / FOLDER
+    if not base.is_dir():
+        return vault, []
+    files = [f for f in base.glob("*.md")]
+    files.sort(key=lambda f: (f.name != "Tasks.md", -f.stat().st_mtime))
+    return vault, [{"name": f.stem, "modified": f.stat().st_mtime, "size": f.stat().st_size} for f in files]
+
+
+def read_note(name):
+    f = find_vault() / FOLDER / (Path(name).name + ".md")
+    return f.read_text(encoding="utf-8") if f.is_file() else None
+
+
+def open_in_obsidian(name=""):
+    """Open a note (or the vault) in Obsidian, or the folder if Obsidian isn't installed."""
+    import subprocess
+    import urllib.parse
+    vault = find_vault()
+    target = vault / FOLDER / (Path(name).name + ".md") if name else vault
+    if obsidian_installed():
+        url = "obsidian://open?path=" + urllib.parse.quote(str(target))
+    else:
+        url = str(target.parent if name else vault)
+    if platform.system() == "Windows":
+        os.startfile(url)
+    elif platform.system() == "Darwin":
+        subprocess.Popen(["open", url])
+    else:
+        subprocess.Popen(["xdg-open", url])
 
 
 def _safe(name):
@@ -64,8 +110,6 @@ def _due(task):
 def export(writer, sheet, tasks, context=""):
     """Write the session into the vault. Returns the note path, or None if there is no vault."""
     vault = find_vault()
-    if vault is None:
-        return None
     base = vault / FOLDER
     att = base / "attachments" / writer.folder.name
     base.mkdir(parents=True, exist_ok=True)

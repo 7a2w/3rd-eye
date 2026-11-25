@@ -29,6 +29,7 @@ CAMERA_INDEX = 0             # 0 = built-in webcam; try 1 for a USB camera
 SLIDE_CHANGE_THRESHOLD = 3   # % of the picture that must change to count as a new slide
 SLIDE_STABLE_FRAMES = 15     # frames the new view must stay still before we snapshot it
 MIN_SECONDS_BETWEEN_SLIDES = 5
+SLIDES_FROM_BUILTIN_CAMERA = False   # camera 0 usually faces you; set True if it faces the board
 
 # ---------- AI assistant ----------
 # Set ONE of these environment variables to turn on AI answers and AI study sheets:
@@ -120,11 +121,11 @@ AUTO_END_MINUTES = 10        # end the session after this much quiet (0 = never)
 AUTO_RESTART_SECONDS = 30    # after an automatic end, start a new session this many seconds later
 
 # ---------- Voice ----------
-# A natural Microsoft neural voice via edge-tts (free, needs internet). Others: en-US-EmmaNeural,
-# en-US-JennyNeural, en-GB-SoniaNeural. Set THIRD_EYE_VOICE="" to use the built-in system voice.
-VOICE = os.environ.get("THIRD_EYE_VOICE", "en-US-AvaMultilingualNeural")
-VOICE_RATE = "-6%"           # a little slower and calmer than default
-VOICE_PITCH = "-2Hz"
+# A calm British neural voice via edge-tts (free, needs internet). Others: en-GB-SoniaNeural,
+# en-GB-MaisieNeural, en-US-AvaMultilingualNeural. Set THIRD_EYE_VOICE="" to use the built-in system voice.
+VOICE = os.environ.get("THIRD_EYE_VOICE", "en-GB-LibbyNeural")
+VOICE_RATE = "+20%"          # brisk, like a person talking
+VOICE_PITCH = "+0Hz"
 
 # ---------- Study sheet reminders ----------
 REVIEW_DAYS = [1, 3, 7]      # spaced-repetition review reminders (days after lecture)

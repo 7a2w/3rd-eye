@@ -5,6 +5,7 @@ Writes the live notes as a Markdown file into SYNC_FOLDER. Point that folder at 
 Dropbox, OneDrive or iCloud Drive and the notes, slide pictures and study sheet appear on your phone.
 """
 import threading
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -132,5 +133,14 @@ class NotesWriter:
 
     def _write(self):
         tmp = self.notes_path.with_suffix(".tmp")
-        tmp.write_text(self._render_md(), encoding="utf-8")
-        tmp.replace(self.notes_path)   # atomic, so cloud sync never grabs a half-written file
+        for attempt in range(5):
+            try:
+                tmp.write_text(self._render_md(), encoding="utf-8")
+                tmp.replace(self.notes_path)   # atomic, so cloud sync never grabs a half-written file
+                return
+            except PermissionError:
+                time.sleep(0.2 * (attempt + 1))  # OneDrive or Dropbox has the file open; try again
+            except OSError as e:
+                print(f"[notes] couldn't save live_notes.md: {e}")
+                return
+        print("[notes] live_notes.md is locked by another program; will save on the next line")

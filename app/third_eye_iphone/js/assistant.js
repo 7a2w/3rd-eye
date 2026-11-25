@@ -51,15 +51,15 @@ export function speak(text) {
   const u = new SpeechSynthesisUtterance(text);
   const voice = pickVoice();
   if (voice) u.voice = voice;
-  u.rate = 0.95; u.pitch = 1;
+  u.rate = 0.92; u.pitch = 1;
   speechSynthesis.speak(u);
 }
 
-const PREFERRED = ['Ava (Premium)', 'Zoe (Premium)', 'Ava (Enhanced)', 'Zoe (Enhanced)', 'Samantha (Enhanced)', 'Ava', 'Samantha', 'Karen', 'Moira'];
+const PREFERRED = ['Serena (Premium)', 'Kate (Premium)', 'Serena (Enhanced)', 'Kate (Enhanced)', 'Martha', 'Serena', 'Kate', 'Stephanie', 'Moira', 'Karen'];
 let chosen = null;
 function pickVoice() {
   if (chosen) return chosen;
-  const voices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith('en'));
+  const voices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith('en')).sort((a, b) => (b.lang === 'en-GB') - (a.lang === 'en-GB'));
   for (const name of PREFERRED) {
     const v = voices.find((x) => x.name === name || x.name.startsWith(name));
     if (v) return (chosen = v);

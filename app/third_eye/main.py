@@ -19,6 +19,7 @@ Examples:
   python main.py --manual --browser              # old behaviour: press Start, use a browser tab
 """
 import argparse
+import json
 import os
 import platform
 import queue
@@ -273,7 +274,8 @@ class App:
         self.course = course.strip() or "Session"
         self.writer = NotesWriter(self.course)
         print(f"[notes] saving to: {self.writer.folder.resolve()}")
-        self.vision = SlideWatcher(self.writer.folder) if self.cam_index is not None else None
+        slides_ok = self.cam_index is not None and (self.cam_index != 0 or config.SLIDES_FROM_BUILTIN_CAMERA)
+        self.vision = SlideWatcher(self.writer.folder) if slides_ok else None
         self.brain = Brain(self)
         self.running = True
         self._stt_thread = threading.Thread(target=self._transcribe_loop, daemon=True)
@@ -441,9 +443,18 @@ class App:
         self.key_status = ""
         if key.strip():
             try:
-                from assistant import call_claude, call_gemini
-                test = call_claude if provider == "claude" else call_gemini
-                test("Reply with the word OK.", "Say OK.", max_tokens=10, **({} if provider == "claude" else {"fast": True}))
+                import urllib.request
+                if provider == "claude":
+                    req = urllib.request.Request("https://api.anthropic.com/v1/models?limit=1",
+                                                 headers={"x-api-key": key.strip(), "anthropic-version": "2023-06-01"})
+                else:
+                    from assistant import gemini_url
+                    body = json.dumps({"contents": [{"role": "user", "parts": [{"text": "Say OK."}]}],
+                                       "generationConfig": {"maxOutputTokens": 5}}).encode()
+                    req = urllib.request.Request(gemini_url("gemini-2.0-flash-lite", key.strip()), data=body,
+                                                 headers={"x-goog-api-key": key.strip(),
+                                                          "content-type": "application/json"})
+                urllib.request.urlopen(req, timeout=8).read()
             except Exception as e:
                 config.save_key(provider, old)
                 self.assistant = Assistant()
