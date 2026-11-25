@@ -96,6 +96,8 @@ def serve(app, port: int):
             }
             if path in actions:
                 actions[path]()
+            elif path == "/api/key":
+                return self._json(app.set_key(str(body.get("provider", "")), str(body.get("key", ""))))
             elif path == "/api/task":
                 app.set_task(str(body.get("id", "")), bool(body.get("done")))
             elif path == "/api/ask_text":

@@ -432,6 +432,32 @@ class App:
                 return
             time.sleep(0.5)
 
+    def set_key(self, provider: str, key: str):
+        """Save an AI key pasted into the app, check it works, and switch to it."""
+        if provider not in config.ENV_NAMES:
+            return {"ok": False, "error": "Pick Gemini or Claude."}
+        old = getattr(config, config.ENV_NAMES[provider])
+        config.save_key(provider, key)
+        self.key_status = ""
+        if key.strip():
+            try:
+                from assistant import call_claude, call_gemini
+                test = call_claude if provider == "claude" else call_gemini
+                test("Reply with the word OK.", "Say OK.", max_tokens=10, **({} if provider == "claude" else {"fast": True}))
+            except Exception as e:
+                config.save_key(provider, old)
+                self.assistant = Assistant()
+                text = str(e)
+                if "API_KEY_INVALID" in text or "invalid x-api-key" in text or " 401" in text or " 400" in text:
+                    text = "the provider says it isn't valid. Copy it again from the provider's site."
+                elif "429" in text:
+                    text = "the key works but has hit its limit for now."
+                return {"ok": False, "error": f"That key didn't work: {text[:160]}"}
+        self.assistant = Assistant()
+        name = "Gemini" if provider == "gemini" else "Claude"
+        return {"ok": True, "message": f"{name} key saved. Answers now come from {self.assistant.provider or 'your notes only'}."
+                if key.strip() else f"{name} key removed."}
+
     def hold(self):
         self.restart_at = None
 
@@ -485,6 +511,7 @@ class App:
             "paused": bool(self.source and self.source.paused),
             "slides": self.vision.count if self.vision else 0,
             "auto": self.auto,
+            "keys": {"gemini": bool(config.GEMINI_API_KEY), "claude": bool(config.ANTHROPIC_API_KEY)},
             "restart_in": max(0, round(self.restart_at - time.time())) if self.restart_at else None,
         }
         if self.brain:

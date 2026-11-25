@@ -35,10 +35,68 @@ MIN_SECONDS_BETWEEN_SLIDES = 5
 #   ANTHROPIC_API_KEY  -> Claude (paid, pay-as-you-go)
 #   GEMINI_API_KEY     -> Google Gemini (has a FREE tier: get a key at aistudio.google.com)
 # If both are set, Claude is used. With neither, the program still works using simple offline methods.
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+def _saved_key(name):
+    _load_key_file()
+    """A key from this process, or on Windows one saved with setx after this terminal was opened."""
+    value = os.environ.get(name, "")
+    if not value and os.name == "nt":
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as k:
+                value = winreg.QueryValueEx(k, name)[0]
+        except OSError:
+            value = ""
+    return value.strip()
+
+
 AI_MODEL = os.environ.get("THIRD_EYE_MODEL", "claude-sonnet-5-5")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
 GEMINI_MODEL = os.environ.get("THIRD_EYE_GEMINI_MODEL", "")   # optional: force a model for study sheets
+
+
+ENV_NAMES = {"gemini": "GEMINI_API_KEY", "claude": "ANTHROPIC_API_KEY"}
+
+
+def save_key(provider: str, key: str):
+    """Use a key now and keep it for next time (the user's environment on Windows, ~/.third_eye_keys elsewhere)."""
+    global GEMINI_API_KEY, ANTHROPIC_API_KEY
+    name = ENV_NAMES[provider]
+    key = key.strip()
+    os.environ[name] = key
+    if provider == "gemini":
+        GEMINI_API_KEY = key
+    else:
+        ANTHROPIC_API_KEY = key
+    if os.name == "nt":
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0, winreg.KEY_SET_VALUE) as k:
+            if key:
+                winreg.SetValueEx(k, name, 0, winreg.REG_SZ, key)
+            else:
+                try:
+                    winreg.DeleteValue(k, name)
+                except OSError:
+                    pass
+    else:
+        path = Path.home() / ".third_eye_keys"
+        lines = [l for l in (path.read_text().splitlines() if path.exists() else []) if not l.startswith(name + "=")]
+        if key:
+            lines.append(f"{name}={key}")
+        path.write_text("\n".join(lines) + "\n")
+        path.chmod(0o600)
+
+
+def _load_key_file():
+    path = Path.home() / ".third_eye_keys"
+    if os.name == "nt" or not path.exists():
+        return
+    for line in path.read_text().splitlines():
+        name, _, value = line.partition("=")
+        if name in ENV_NAMES.values() and value and not os.environ.get(name):
+            os.environ[name] = value
+
+
+ANTHROPIC_API_KEY = _saved_key("ANTHROPIC_API_KEY")
+GEMINI_API_KEY = _saved_key("GEMINI_API_KEY") or _saved_key("GOOGLE_API_KEY")
 
 
 def ai_provider() -> str:
@@ -48,6 +106,8 @@ def ai_provider() -> str:
     if GEMINI_API_KEY:
         return "Gemini"
     return ""
+
+
 CONTEXT_MINUTES = 5          # how much recent speech the assistant "remembers" for live questions
 
 # ---------- Always-on assistant ----------

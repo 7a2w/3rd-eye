@@ -19,7 +19,7 @@ What it does on its own:
 
 ### AI key
 
-It works offline with simple rules, but it is much smarter with an AI key. Set one of these, then restart:
+It works offline with simple rules, but it is much smarter with an AI key. Double-click **Set AI Key.bat**, paste the key, then restart Third Eye. Or set one of these yourself:
 
 | Key | Cost | Get it |
 |---|---|---|

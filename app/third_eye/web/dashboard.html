@@ -45,6 +45,12 @@
   .state b{color:var(--text);font-weight:600}
   .state.rec b{color:var(--rec)} .state.ask b{color:var(--ask)}
   .ai-note{font-size:10px;color:var(--muted)}
+  #keyPanel{position:fixed;top:56px;right:20px;width:380px;z-index:30;background:var(--surface-2);border:1px solid var(--border-ctl);padding:16px}
+  #keyPanel h3{margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+  #keyPanel .row{display:flex;gap:8px;margin-top:10px}
+  #keyPanel .row>*{flex:1}
+  #keyMsg{margin-top:10px;min-height:16px}
+  #keyMsg.bad{color:var(--danger)} #keyMsg.good{color:var(--accent)}
 
   main{padding:16px 20px 32px;max-width:1500px;margin:0 auto}
 
@@ -186,7 +192,24 @@
   <div class="spacer"></div>
   <div class="state" id="state"><b id="stateWord">Not recording</b> <span id="timer"></span></div>
   <div class="ai-note" id="aiNote"></div>
+  <button class="btn small" id="keyBtn">AI key</button>
 </header>
+
+<div id="keyPanel" class="hidden" role="dialog" aria-label="AI key">
+  <h3>AI key</h3>
+  <p class="note" style="margin:0">Paste a key to switch on AI answers, summaries and context. Gemini has a free tier
+    (aistudio.google.com). The key is saved on this laptop only.</p>
+  <div class="row">
+    <select id="keyProvider"><option value="gemini">Gemini</option><option value="claude">Claude</option></select>
+  </div>
+  <div class="row"><input type="password" id="keyInput" placeholder="Paste key" autocomplete="off" spellcheck="false" aria-label="API key"></div>
+  <div class="row">
+    <button class="btn violet" id="keySave">Save</button>
+    <button class="btn" id="keyForget">Remove</button>
+    <button class="btn" id="keyClose">Close</button>
+  </div>
+  <p class="note" id="keyMsg"></p>
+</div>
 
 <main>
   <!-- ============ SETUP ============ -->
@@ -497,7 +520,8 @@ async function poll() {
   const restart = S.phase === 'done' && typeof S.restart_in === 'number';
   $('restartLine').classList.toggle('hidden', !restart);
   if (restart) $('restartText').textContent = `New session starts in ${Math.ceil(S.restart_in)}s`;
-  $('aiNote').textContent = S.ai === 'offline' ? 'Answers from your notes only' : `Answers by ${S.ai}`;
+  $('aiNote').textContent = S.ai === 'offline' ? 'No AI key: answers from your notes only' : `Answers by ${S.ai}`;
+  $('keyBtn').textContent = S.ai === 'offline' ? 'Add AI key' : 'AI key';
 
   updateCamera();
   const camOpts = cameraOptions(), camCur = S.camera.index === null ? 'off' : S.camera.index;
@@ -553,6 +577,24 @@ $('askSend').onclick = () => sendText($('askInput'));
 $('askSendDone').onclick = () => sendText($('askInputDone'));
 $('askInput').onkeydown = e => { if (e.key === 'Enter') sendText(e.target); };
 $('askInputDone').onkeydown = e => { if (e.key === 'Enter') sendText(e.target); };
+
+$('keyBtn').onclick = () => { $('keyPanel').classList.toggle('hidden'); $('keyInput').focus(); };
+$('keyClose').onclick = () => $('keyPanel').classList.add('hidden');
+async function sendKey(key) {
+  const msg = $('keyMsg'); msg.className = 'note'; msg.textContent = key ? 'Checking the key...' : 'Removing...';
+  $('keySave').disabled = true;
+  try {
+    const r = await fetch('/api/key', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({provider: $('keyProvider').value, key})});
+    const d = await r.json();
+    msg.className = 'note ' + (d.ok ? 'good' : 'bad'); msg.textContent = d.ok ? d.message : d.error;
+    if (d.ok) $('keyInput').value = '';
+  } catch (e) { msg.className = 'note bad'; msg.textContent = 'Could not reach Third Eye.'; }
+  $('keySave').disabled = false;
+}
+$('keySave').onclick = () => { const k = $('keyInput').value.trim(); if (k) sendKey(k); };
+$('keyInput').onkeydown = e => { if (e.key === 'Enter') $('keySave').click(); };
+$('keyForget').onclick = () => { if (confirm('Remove the saved ' + $('keyProvider').selectedOptions[0].text + ' key?')) sendKey(''); };
 
 poll(); setInterval(poll, 400);
 </script>
