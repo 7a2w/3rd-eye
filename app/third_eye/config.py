@@ -66,15 +66,18 @@ ENV_NAMES = {"gemini": "GEMINI_API_KEY", "claude": "ANTHROPIC_API_KEY"}
 
 
 def save_key(provider: str, key: str):
-    """Use a key now and keep it for next time (the user's environment on Windows, ~/.third_eye_keys elsewhere)."""
-    global GEMINI_API_KEY, ANTHROPIC_API_KEY
+    """Use a key now and keep it for next time (the user's environment on Windows, ~/.third_eye_keys elsewhere).
+    Gemini keys form a queue: a new key is added to it, an empty key clears it."""
+    global GEMINI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEYS
     name = ENV_NAMES[provider]
     key = key.strip()
-    os.environ[name] = key
     if provider == "gemini":
-        GEMINI_API_KEY = key
+        GEMINI_API_KEYS = [key] + [k for k in GEMINI_API_KEYS if k != key] if key else []
+        GEMINI_API_KEY = GEMINI_API_KEYS[0] if GEMINI_API_KEYS else ""
+        key = ",".join(GEMINI_API_KEYS)
     else:
         ANTHROPIC_API_KEY = key
+    os.environ[name] = key
     if os.name == "nt":
         import winreg
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0, winreg.KEY_SET_VALUE) as k:
@@ -105,7 +108,17 @@ def _load_key_file():
 
 
 ANTHROPIC_API_KEY = _saved_key("ANTHROPIC_API_KEY")
-GEMINI_API_KEY = _saved_key("GEMINI_API_KEY") or _saved_key("GOOGLE_API_KEY")
+GEMINI_API_KEYS = [k.strip() for k in (_saved_key("GEMINI_API_KEY") or _saved_key("GOOGLE_API_KEY")).split(",")
+                   if k.strip()]
+GEMINI_API_KEY = GEMINI_API_KEYS[0] if GEMINI_API_KEYS else ""
+
+
+def forget_gemini_key(key: str):
+    """Take one key out of the queue (used when a pasted key fails its check)."""
+    rest = [k for k in GEMINI_API_KEYS if k != key.strip()]
+    save_key("gemini", "")
+    for k in reversed(rest):
+        save_key("gemini", k)
 
 
 def ai_provider() -> str:

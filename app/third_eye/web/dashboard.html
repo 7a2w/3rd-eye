@@ -272,13 +272,14 @@
 <div id="keyPanel" class="hidden" role="dialog" aria-label="AI key">
   <h3>AI key</h3>
   <p class="note" style="margin:0">Paste a key to switch on AI answers, summaries and context. Gemini has a free tier
-    (aistudio.google.com). The key is saved on this laptop only.</p>
+    (aistudio.google.com). The key is saved on this laptop only. Add more Gemini keys to make a queue:
+    when one runs out, Third Eye switches to the next.</p>
   <div class="row">
     <select id="keyProvider"><option value="gemini">Gemini</option><option value="claude">Claude</option></select>
   </div>
   <div class="row"><input type="password" id="keyInput" placeholder="Paste key" autocomplete="off" spellcheck="false" aria-label="API key"></div>
   <div class="row">
-    <button class="btn violet" id="keySave">Save</button>
+    <button class="btn violet" id="keySave">Add key</button>
     <button class="btn" id="keyForget">Remove</button>
     <button class="btn" id="keyClose">Close</button>
   </div>
@@ -671,7 +672,7 @@ async function poll() {
   const restart = S.phase === 'done' && typeof S.restart_in === 'number';
   $('restartLine').classList.toggle('hidden', !restart);
   if (restart) $('restartText').textContent = `New session starts in ${Math.ceil(S.restart_in)}s`;
-  $('aiNote').textContent = S.ai === 'offline' ? 'No AI key: answers from your notes only' : `Answers by ${S.ai}`;
+  $('aiNote').textContent = S.ai === 'offline' ? 'No AI key: answers from your notes only' : `Answers by ${S.ai}` + (S.keys && S.keys.gemini > 1 ? ` · ${S.keys.gemini} keys` : '');
   $('keyBtn').textContent = S.ai === 'offline' ? 'Add AI key' : 'AI key';
 
   updateCamera();
@@ -746,7 +747,7 @@ async function sendKey(key) {
 }
 $('keySave').onclick = () => { const k = $('keyInput').value.trim(); if (k) sendKey(k); };
 $('keyInput').onkeydown = e => { if (e.key === 'Enter') $('keySave').click(); };
-$('keyForget').onclick = () => { if (confirm('Remove the saved ' + $('keyProvider').selectedOptions[0].text + ' key?')) sendKey(''); };
+$('keyForget').onclick = () => { if (confirm('Remove all saved ' + $('keyProvider').selectedOptions[0].text + ' keys?')) sendKey(''); };
 
 let obsCurrent = '';
 const TABS = {assistant: ['tabAssistant', 'assistantView'], obsidian: ['tabObsidian', 'obsView'],

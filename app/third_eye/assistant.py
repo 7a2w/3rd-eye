@@ -120,7 +120,8 @@ def check_gemini_key(key: str) -> str:
     return reasons[0] if reasons else "no answer from Google"
 
 
-def _gemini_request(model, system, user, max_tokens, timeout, extra_parts=None, search=False):
+def _gemini_request(model, system, user, max_tokens, timeout, extra_parts=None, search=False, key=None):
+    key = key or config.GEMINI_API_KEY
     gen = {"maxOutputTokens": max_tokens * 4 + 1024, "temperature": 0.4}
     # Thinking makes answers slower; switch it off where the model allows.
     if model.startswith("gemini-2.5-flash") and model not in _no_thinking_cfg:
@@ -131,9 +132,9 @@ def _gemini_request(model, system, user, max_tokens, timeout, extra_parts=None, 
     if search:
         body["tools"] = [{"google_search": {}}]
     req = urllib.request.Request(
-        gemini_url(model, config.GEMINI_API_KEY),
+        gemini_url(model, key),
         data=json.dumps(body).encode(), method="POST",
-        headers={"x-goog-api-key": config.GEMINI_API_KEY, "content-type": "application/json"})
+        headers={"x-goog-api-key": key, "content-type": "application/json"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.load(resp)
 
@@ -141,41 +142,77 @@ def _gemini_request(model, system, user, max_tokens, timeout, extra_parts=None, 
 _no_search = set()          # models that refused the Google Search tool
 
 
+_key_rest = {}              # key -> time it can be tried again after hitting its limit
+RECENT = re.compile(r"\b(today|tonight|now|right now|currently|current|latest|recent|news|this (week|month|year)|"
+                    r"weather|forecast|score|scores|won|winning|game|stock|price|cost|release|released|election|"
+                    r"who is the|president|prime minister|ceo|20\d\d)\b", re.I)
+
+
+def needs_search(question: str) -> bool:
+    return bool(RECENT.search(question))
+
+
+def _keys_to_try():
+    keys = config.GEMINI_API_KEYS or ([config.GEMINI_API_KEY] if config.GEMINI_API_KEY else [])
+    now = time.time()
+    fresh = [k for k in keys if _key_rest.get(k, 0) <= now]
+    return fresh or sorted(keys, key=lambda k: _key_rest.get(k, 0))[:1]
+
+
 def call_gemini(system: str, user: str, max_tokens: int = 600, fast: bool = False,
                 search: bool = False, extra_parts=None) -> str:
-    """Google Gemini API (free tier available), standard library only. search=True lets it look things up."""
-    if config.GEMINI_API_KEY not in _endpoint:
-        check_gemini_key(config.GEMINI_API_KEY)
+    """Google Gemini API (free tier available), standard library only. Moves to the next key in the
+    queue when one hits its limit. search=True lets it look things up."""
+    last_error = None
+    for key in _keys_to_try():
+        try:
+            text = _call_gemini_key(key, system, user, max_tokens, fast, search, extra_parts)
+            if key != config.GEMINI_API_KEY:
+                config.GEMINI_API_KEY = key
+                print(f"[assistant] switched to the next Gemini key in the queue")
+            return text
+        except RuntimeError as e:
+            last_error = e
+            if "limit" in str(e).lower():
+                _key_rest[key] = time.time() + 60
+                continue
+            raise
+    raise last_error or RuntimeError("no Gemini key set")
+
+
+def _call_gemini_key(key, system, user, max_tokens, fast, search, extra_parts):
+    if key not in _endpoint:
+        check_gemini_key(key)
     mode = "fast" if fast else "smart"
     models = [config.GEMINI_MODEL] if config.GEMINI_MODEL and not fast else []
     models = list(dict.fromkeys(([_last_good[mode]] if mode in _last_good else []) + models
                                 + (GEMINI_FAST if fast else GEMINI_SMART)))
-    timeout = 20 if fast else 90
+    timeout = 8 if fast else 60
     last_error = None
-    for attempt in range(2):                  # two rounds through the models, with a short pause between
+    for attempt in range(2 if not fast else 1):
         for model in models:
             use_search = search and model not in _no_search
             try:
                 try:
-                    data = _gemini_request(model, system, user, max_tokens, timeout, extra_parts, use_search)
+                    data = _gemini_request(model, system, user, max_tokens, timeout, extra_parts, use_search, key)
                 except urllib.error.HTTPError as e:
                     if e.code == 400 and use_search:
-                        _no_search.add(model)         # no search on this model or key: answer without it
-                        data = _gemini_request(model, system, user, max_tokens, timeout, extra_parts)
+                        _no_search.add(model)
+                        data = _gemini_request(model, system, user, max_tokens, timeout, extra_parts, key=key)
                     elif e.code == 400 and model not in _no_thinking_cfg:
-                        _no_thinking_cfg.add(model)   # model didn't accept the thinking setting: retry without
-                        data = _gemini_request(model, system, user, max_tokens, timeout, extra_parts)
+                        _no_thinking_cfg.add(model)
+                        data = _gemini_request(model, system, user, max_tokens, timeout, extra_parts, key=key)
                     else:
                         raise
             except urllib.error.HTTPError as e:
                 detail = e.read().decode(errors="ignore")[:300]
-                if e.code in (404, 500, 503, 504):  # model missing or busy: try the next one
+                if e.code in (404, 500, 503, 504):
                     last_error = f"{model}: {'not available' if e.code == 404 else 'busy right now'}"
                     continue
-                if e.code == 429:                     # limit for this model: another model has its own limit
-                    if use_search:                    # search has its own, smaller limit: try without it
+                if e.code == 429:
+                    if use_search:
                         try:
-                            data = _gemini_request(model, system, user, max_tokens, timeout, extra_parts)
+                            data = _gemini_request(model, system, user, max_tokens, timeout, extra_parts, key=key)
                         except Exception:
                             last_error = "Gemini free-tier limit reached; wait a minute and try again"
                             continue
@@ -193,7 +230,8 @@ def call_gemini(system: str, user: str, max_tokens: int = 600, fast: bool = Fals
                 _last_good[mode] = model
                 return text
             last_error = f"{model} returned an empty answer"
-        time.sleep(1)
+        if not fast:
+            time.sleep(1)
     raise RuntimeError(last_error or "Gemini didn't answer")
 
 
@@ -282,7 +320,8 @@ class Assistant:
                              "earlier session, say you don't have that.\n" if asks_past else "")
                           + "\nAnswer the QUESTION.")
                 t0 = time.time()
-                answer = call_ai(self.SYSTEM, prompt, max_tokens=200, fast=True, search=config.WEB_SEARCH)
+                answer = call_ai(self.SYSTEM, prompt, max_tokens=150, fast=True,
+                                 search=config.WEB_SEARCH and needs_search(question))
                 print(f"[assistant] answered in {time.time() - t0:.1f}s")
                 return answer
             except Exception as e:

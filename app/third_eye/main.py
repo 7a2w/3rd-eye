@@ -609,7 +609,10 @@ class App:
                     if reason:
                         raise RuntimeError(reason)
             except Exception as e:
-                config.save_key(provider, old)
+                if provider == "gemini":
+                    config.forget_gemini_key(key)
+                else:
+                    config.save_key(provider, old)
                 self.assistant = Assistant()
                 text = str(e)
                 if "invalid x-api-key" in text or "HTTP Error 401" in text:
@@ -617,8 +620,12 @@ class App:
                 return {"ok": False, "error": f"Google/Anthropic said: {text[:220]}"}
         self.assistant = Assistant()
         name = "Gemini" if provider == "gemini" else "Claude"
+        if provider == "gemini" and key.strip():
+            n = len(config.GEMINI_API_KEYS)
+            return {"ok": True, "message": f"Gemini key added. {n} key{'s' if n != 1 else ''} in the queue; "
+                                           "when one runs out the next is used."}
         return {"ok": True, "message": f"{name} key saved. Answers now come from {self.assistant.provider or 'your notes only'}."
-                if key.strip() else f"{name} key removed."}
+                if key.strip() else f"{name} keys removed."}
 
     def hold(self):
         self.restart_at = None
@@ -673,7 +680,7 @@ class App:
             "paused": bool(self.source and self.source.paused),
             "slides": self.vision.count if self.vision else 0,
             "auto": self.auto,
-            "keys": {"gemini": bool(config.GEMINI_API_KEY), "claude": bool(config.ANTHROPIC_API_KEY)},
+            "keys": {"gemini": len(config.GEMINI_API_KEYS), "claude": bool(config.ANTHROPIC_API_KEY)},
             "restart_in": max(0, round(self.restart_at - time.time())) if self.restart_at else None,
             "device": {"state": self.device, "clips": self.clip_count, "queue": len(self.offline),
                        "online": self.offline.online},
