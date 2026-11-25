@@ -98,7 +98,7 @@ function renderSituation() {
 }
 
 function heard(t, text) {
-  if (!text) return;
+  if (!text || app.phase !== 'live' || app.mode === 'PAUSED') return;
   app.notes.addSpeech(t, text);
   app.brain?.onSpeech(text);
 }
@@ -304,11 +304,16 @@ $('askSend').onclick = sendText;
 $('askInput').onkeydown = (e) => { if (e.key === 'Enter') sendText(); };
 $('camSlot').addEventListener('dblclick', async () => { if (app.cap?.switchCamera) await app.cap.switchCamera(app.cap.facing === 'environment' ? 'user' : 'environment'); });
 
-renderSettings($('settingsRoot'), { onChange: () => { $('aiNote') && ($('aiNote').textContent = aiProvider()); } });
+const supportNote = () => { $('supportNote').textContent = aiProvider() ? `Answers by ${aiProvider()}.` : 'No AI key set. Add one in Settings for better answers and summaries.'; };
+renderSettings($('settingsRoot'), { onChange: (s, k) => {
+  $('aiNote') && ($('aiNote').textContent = aiProvider());
+  if (k === 'camera') $('camSelect').value = s.camera;
+  if (navigator.mediaDevices?.getUserMedia) supportNote();
+} });
 const s0 = getSettings(); $('courseInput').value = s0.course; $('camSelect').value = s0.camera;
 if (!navigator.mediaDevices?.getUserMedia) {
   $('supportNote').textContent = 'This page needs HTTPS (or localhost) to use the microphone. Open it from the https address.';
   $('startBtn').disabled = true;
-} else $('supportNote').textContent = aiProvider() ? `Answers by ${aiProvider()}.` : 'No AI key set. Add one in Settings for better answers and summaries.';
+} else supportNote();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 showPhase('setup');

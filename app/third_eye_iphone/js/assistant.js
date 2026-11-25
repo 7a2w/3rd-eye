@@ -19,7 +19,7 @@ export function offlineAnswer(question, transcript, tasks = []) {
     if (!open.length) return 'You have no tasks noted yet.';
     return `You have ${open.length} task${open.length === 1 ? '' : 's'}: ` + open.slice(0, 3).map((x) => x.task + (x.due ? `, due ${x.due}` : '')).join('. ') + '.';
   }
-  const sentences = transcript.split(/(?<=[.!?])\s+/).filter((s) => s.trim());
+  const sentences = transcript.split(/(?<=[.!?])\s+/).filter((s) => s.trim() && !/\b(?:third|3rd)[\s-]?(?:eye|i|ai)\b/i.test(s));
   if (/\b(what did i miss|summari[sz]e|recap)\b/.test(ql)) return sentences.length ? 'Lately: ' + sentences.slice(-3).join(' ') : "I haven't heard anything yet.";
   const q = new Set(keywords(question));
   const hit = (s) => keywords(s).filter((w) => q.has(w)).length;

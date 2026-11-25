@@ -4,7 +4,7 @@ import { keywords } from './assistant.js';
 import { parseDue } from './brain.js';
 
 const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-const TODO_WORDS = /\b(due|homework|assignment|problem set|quiz|exam|midterm|read(ing)?|chapter|submit|deadline|lab report|essay|project|final exam)\b/i;
+const TODO_WORDS = /\b(due|homework|assignment|problem set|quiz|exam|midterm|read(ing)? (chapter|pages?|section)|submit|deadline|lab report|essay|project|final exam)\b/i;
 const FILLER = new Set('one two three four five six seven eight nine ten first second third next last today talk talking going called happens make makes made thing things something stuff right basically actually kind sort lot people into onto over under want need look see said says say good great example mean means let'.split(' '));
 
 const PROMPT = (course, date, transcript, slides, context) => `You are making a one-page summary sheet for someone with ADHD/insomnia
@@ -39,11 +39,12 @@ function dueGuess(s) {
   if (s.includes('next week')) return 7;
   if (s.includes('two weeks')) return 14;
   const today = (new Date().getDay() + 6) % 7;
-  for (let i = 0; i < 7; i++) if (s.includes(WEEKDAYS[i])) return ((i - today + 7) % 7) || 7;
+  for (let i = 0; i < 7; i++) if (s.includes(WEEKDAYS[i])) { const d = ((i - today + 7) % 7) || 7; return s.includes('next ' + WEEKDAYS[i]) && i > today ? d + 7 : d; }
   return 3;
 }
 
 export function offlineSheet(course, transcript, slides) {
+  transcript = transcript.split(/(?<=[.!?])\s+/).filter((s) => !/\b(?:third|3rd)[\s-]?(?:eye|i|ai)\b/i.test(s)).join(' ');
   const words = keywords(transcript + ' ' + slides);
   const freq = new Map(); words.forEach((w) => freq.set(w, (freq.get(w) || 0) + 1));
   const sentences = [...new Set(transcript.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter((s) => s.split(/\s+/).length >= 6))];
@@ -85,7 +86,7 @@ export function toMarkdown(sheet, course, date, reviewDays) {
     '## Key terms', ...(sheet.key_terms || []).map((t) => `- **${t.term}**: ${t.definition}`), '',
     '## Test yourself', ...(sheet.exam_questions || []).map((q, i) => `${i + 1}. ${q}`), '');
   if ((sheet.confusing_parts || []).length) md.push('## Follow up', ...sheet.confusing_parts.map((c) => `- ${c}`), '');
-  md.push('## Tasks and deadlines', ...((sheet.todos || []).length ? sheet.todos.map((t) => `- [ ] ${t.task} (due in about ${t.due_in_days} days)`) : ['None came up.']), '',
+  md.push('## Tasks and deadlines', ...((sheet.todos || []).length ? sheet.todos.map((t) => `- [ ] ${t.task} (${t.due ? 'due ' + t.due : `due in about ${t.due_in_days} days`})`) : ['None came up.']), '',
     '## Review again on', ...reviewDates(date, { reviewDays }).map((d) => `- ${d.toDateString()}`), '');
   return md.join('\n');
 }
@@ -103,13 +104,13 @@ export function toIcs(sheet, course, date, s) {
 const normTask = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
 
 export function mergeTodos(todos, tasks, date) {
-  const seen = new Set(todos.map((t) => normTask(t.task))), out = [...todos];
+  const seen = new Set(tasks.map((x) => normTask(x.task))), out = [];
   for (const x of tasks) {
-    if (x.done || seen.has(normTask(x.task))) continue;
-    seen.add(normTask(x.task));
+    if (x.done) continue;
     const due = parseDue(x.due);
     out.push({ task: x.task, due_in_days: due ? Math.max(0, Math.round((due - date) / 864e5)) : 3, due: x.due || null });
   }
+  for (const t of todos) if (!seen.has(normTask(t.task))) { seen.add(normTask(t.task)); out.push(t); }
   return out;
 }
 

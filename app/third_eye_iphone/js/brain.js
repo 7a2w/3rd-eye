@@ -20,6 +20,7 @@ const TASK_HINT = new RegExp(
   'make sure|appointment|meeting (on|at)|call (him|her|them|back)|email|send|book|schedule|pick up|buy)\\b', 'i');
 
 const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const FILLER = new Set('today going gonna about think really thing things something there their would could should people right maybe actually basically kind sort said says first second third next last'.split(' '));
 const MIN_WORDS = 25;
 const SPEAK_GAP = 45;
 
@@ -65,7 +66,7 @@ export function guessDue(sentence, now = new Date()) {
   if (s.includes('next week')) return at(now, 7, 9);
   if (s.includes('two weeks')) return at(now, 14, 9);
   const today = (now.getDay() + 6) % 7;
-  for (let i = 0; i < 7; i++) if (s.includes(WEEKDAYS[i])) return at(now, ((i - today + 7) % 7) || 7, 9);
+  for (let i = 0; i < 7; i++) if (s.includes(WEEKDAYS[i])) return at(now, (((i - today + 7) % 7) || 7) + (s.includes('next ' + WEEKDAYS[i]) && i > today ? 7 : 0), 9);
   return null;
 }
 
@@ -83,8 +84,8 @@ export function offlineContext(text) {
 
 export function offlineTopic(text) {
   const freq = new Map();
-  for (const w of keywords(text)) if (w.length > 4) freq.set(w, (freq.get(w) || 0) + 1);
-  return [...freq].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([w]) => w).join(' ');
+  for (const w of keywords(text)) if (w.length > 4 && !w.includes("'") && !FILLER.has(w)) freq.set(w, (freq.get(w) || 0) + 1);
+  return [...freq].sort((a, b) => b[1] - a[1] || b[0].length - a[0].length).slice(0, 3).map(([w]) => w).join(' ');
 }
 
 export function parseDue(due) {

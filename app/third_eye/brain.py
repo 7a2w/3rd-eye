@@ -82,6 +82,8 @@ def guess_due(sentence: str, now: datetime):
     for i, day in enumerate(WEEKDAYS):
         if day in s:
             ahead = (i - now.weekday()) % 7 or 7
+            if f"next {day}" in s and ahead < 7 and i > now.weekday():
+                ahead += 7
             return (now + timedelta(days=ahead)).replace(hour=9, minute=0)
     if "tonight" in s or "today" in s:
         return now.replace(hour=20, minute=0)

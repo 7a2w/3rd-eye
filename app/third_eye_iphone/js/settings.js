@@ -204,6 +204,8 @@ export function renderSettings(root, { onChange } = {}) {
     else if (el.type === 'number') {
       v = parseFloat(el.value);
       if (Number.isNaN(v)) v = DEFAULTS[k];
+      v = Math.min(+el.max, Math.max(+el.min, v));
+      el.value = v;
     } else if (k === 'reviewDays') {
       v = el.value.split(/[,\s]+/).map((x) => parseInt(x, 10)).filter((x) => x > 0);
       if (!v.length) v = DEFAULTS.reviewDays;

@@ -120,7 +120,8 @@ def keywords(text: str):
 
 def offline_answer(question: str, transcript: str) -> str:
     q = set(keywords(question))
-    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", transcript) if len(s.split()) > 3]
+    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", transcript)
+                 if len(s.split()) > 3 and not re.search(r"\b(third|3rd)[\s-]?(eye|i)\b", s, re.I)]
     if not q or not sentences:
         return "I haven't heard enough yet to answer that. Add an AI key for general questions."
     scored = sorted(sentences, key=lambda s: len(q & set(keywords(s))), reverse=True)
