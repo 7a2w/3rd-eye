@@ -48,7 +48,16 @@ def ai_provider() -> str:
     if GEMINI_API_KEY:
         return "Gemini"
     return ""
-CONTEXT_MINUTES = 5          # how much recent lecture the assistant "remembers" for live questions
+CONTEXT_MINUTES = 5          # how much recent speech the assistant "remembers" for live questions
+
+# ---------- Always-on assistant ----------
+AUTO_START = True            # start listening as soon as the speech model is ready (--manual turns this off)
+THINK_SECONDS = 45           # how often it works out the situation, tasks and things to explain
+THINK_MIN_WORDS = 25         # new words needed before it thinks again
+AUTO_SPEAK = True            # say tasks and explanations out loud without being asked
+AUTO_SPEAK_GAP = 45          # seconds between unprompted remarks
+AUTO_END_MINUTES = 10        # end the session after this much quiet (0 = never)
+AUTO_RESTART_SECONDS = 30    # after an automatic end, start a new session this many seconds later
 
 # ---------- Study sheet reminders ----------
 REVIEW_DAYS = [1, 3, 7]      # spaced-repetition review reminders (days after lecture)

@@ -1,8 +1,8 @@
 // Cache-first app shell so the app opens offline after the first visit. API calls are never cached.
-const CACHE = 'thirdeye-v1';
+const CACHE = 'thirdeye-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './css/app.css',
   './js/app.js', './js/bus.js', './js/util.js', './js/settings.js', './js/capture.js', './js/slides.js', './js/notes.js',
-  './js/ai.js', './js/transcribe.js', './js/ocr.js', './js/assistant.js', './js/studysheet.js',
+  './js/ai.js', './js/transcribe.js', './js/ocr.js', './js/assistant.js', './js/brain.js', './js/studysheet.js',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });

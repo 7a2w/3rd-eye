@@ -12,7 +12,8 @@ export const DEFAULTS = {
   sttEngine: 'auto',        // 'auto' | 'safari' | 'gemini' | 'openai'
   ocrEngine: 'auto',        // 'auto' | 'tesseract' | 'ai' | 'off'
   camera: 'environment',    // 'environment' | 'user' | 'off'
-  speakAnswers: true,
+  speakAnswers: true, autoSpeak: true,
+  autoEndMinutes: 10, thinkSeconds: 45,
   chunkSeconds: 8, questionSeconds: 6, silenceRms: 0.004,
   slideChangeThreshold: 3, slideStableFrames: 15, minSecondsBetweenSlides: 5,
   clipSeconds: 30,
@@ -68,7 +69,9 @@ export function aiProvider() {
 const NUMBER_FIELDS = [
   ['chunkSeconds', 'Speech chunk length (s)', 2, 30, 1],
   ['questionSeconds', 'Question recording length (s)', 2, 20, 1],
-  ['contextMinutes', 'Minutes of lecture used for live answers', 1, 60, 1],
+  ['contextMinutes', 'Minutes of listening used for answers', 1, 60, 1],
+  ['thinkSeconds', 'Think about what it heard every (s)', 15, 600, 5],
+  ['autoEndMinutes', 'End the session after this many quiet minutes (0 = never)', 0, 120, 1],
   ['clipSeconds', 'Saved clip length (s)', 5, 120, 5],
   ['silenceRms', 'Silence level (skip quieter chunks)', 0, 0.1, 0.001],
   ['slideChangeThreshold', 'Slide change needed (%)', 0.5, 50, 0.5],
@@ -111,8 +114,8 @@ export function renderSettings(root, { onChange } = {}) {
     <section class="panel">
       <h2 class="panel-title">AI keys</h2>
       <p class="muted">Keys are stored only on this phone. Each key is sent only to its own
-        provider when Third Eye asks it something. Without any key, Third Eye still records,
-        uses Safari speech recognition and builds a simpler study sheet.</p>
+        provider when Third Eye asks it something. Without any key, Third Eye still listens,
+        uses Safari speech recognition and builds a simpler summary.</p>
       ${keyRow('anthropicKey', 'Claude (Anthropic) key', 'Used for answers and the study sheet.')}
       ${keyRow('geminiKey', 'Gemini (Google) key', 'Free tier works. Used for speech to text, and for answers if there is no Claude key.')}
       ${keyRow('openaiKey', 'OpenAI key', 'Used only for speech to text if chosen.')}
@@ -141,6 +144,10 @@ export function renderSettings(root, { onChange } = {}) {
       <label class="field field-inline" for="set-speakAnswers">
         <span class="field-label">Speak answers out loud</span>
         <input id="set-speakAnswers" data-key="speakAnswers" type="checkbox" class="switch">
+      </label>
+      <label class="field field-inline" for="set-autoSpeak">
+        <span class="field-label">Speak up without being asked</span>
+        <input id="set-autoSpeak" data-key="autoSpeak" type="checkbox" class="switch">
       </label>
     </section>
 

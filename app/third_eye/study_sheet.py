@@ -1,7 +1,8 @@
 """
-After the lecture: concise study sheet + reminders.
+After a session: a short summary sheet + reminders. For a lecture it reads as a study sheet;
+for a meeting or conversation the same sections hold the decisions, names and follow-ups.
 
-Outputs (in the lecture's synced folder):
+Outputs (in the session's synced folder):
   study_sheet.md    - readable anywhere
   study_sheet.docx  - Word version (if python-docx is installed)
   reminders.ics     - tap on your phone to add review reminders + to-dos to your calendar
@@ -16,11 +17,16 @@ from pathlib import Path
 import config
 from assistant import STOPWORDS, call_ai, keywords
 
-SHEET_PROMPT = """You are making a one-page study sheet for a university student with ADHD/insomnia
-who may have zoned out during parts of this lecture. Be concise, concrete and skimmable.
+SHEET_PROMPT = """You are making a one-page summary for a university student with ADHD/insomnia
+who may have zoned out during parts of this session. Be concise, concrete and skimmable.
+If it was a lecture, write a study sheet. If it was a meeting, call or conversation, key_terms holds
+names, places and jargon, exam_questions holds questions worth following up on, and todos holds
+commitments and decisions that need action.
 
-Course: {course}
-Lecture date: {date}
+Session: {course}
+What it seemed to be: {context}
+Date: {date}
+Tasks already noted while listening: {tasks}
 
 TRANSCRIPT (auto speech-to-text, may contain errors):
 {transcript}
@@ -30,21 +36,22 @@ TEXT CAPTURED FROM SLIDES/WHITEBOARD (OCR, may contain errors):
 
 Return ONLY valid JSON with exactly these keys:
 {{
- "title": "short lecture topic",
- "tldr": "2-3 sentence summary of the whole lecture",
+ "title": "short name for the session",
+ "tldr": "2-3 sentence summary of the whole session",
  "key_points": ["5-8 most important ideas, one short sentence each"],
- "key_terms": [{{"term": "...", "definition": "short definition as used in the lecture"}}],
- "exam_questions": ["3-5 likely exam / self-test questions"],
- "todos": [{{"task": "homework, readings, deadlines the professor mentioned", "due_in_days": 7}}],
- "confusing_parts": ["anything that sounded unclear or worth asking the professor about (can be empty)"]
+ "key_terms": [{{"term": "...", "definition": "short definition as used here"}}],
+ "exam_questions": ["3-5 self-test or follow-up questions"],
+ "todos": [{{"task": "homework, deadlines, commitments and events mentioned", "due_in_days": 7}}],
+ "confusing_parts": ["anything that sounded unclear or worth asking about later (can be empty)"]
 }}
 For todos, estimate due_in_days from what was said (e.g. 'next class' ~2, 'next week' 7). Use [] if none."""
 
 
 # ---------------- AI version ----------------
-def ai_sheet(course, transcript, slides):
-    raw = call_ai("You write excellent, accurate study materials. Output JSON only.",
-                      SHEET_PROMPT.format(course=course, date=datetime.now().strftime("%Y-%m-%d"),
+def ai_sheet(course, transcript, slides, context="", tasks=""):
+    raw = call_ai("You write accurate, skimmable summaries. Output JSON only.",
+                      SHEET_PROMPT.format(course=course, context=context or "unknown", tasks=tasks or "none",
+                                          date=datetime.now().strftime("%Y-%m-%d"),
                                           transcript=transcript[-60000:] or "(empty)",
                                           slides=slides[-15000:] or "(none)"),
                       max_tokens=2000)
@@ -218,25 +225,51 @@ def to_ics(sheet, course, date, path):
     return path
 
 
-def generate(writer) -> dict:
-    """Build the study sheet for a finished lecture (writer = sync.NotesWriter)."""
+def generate(writer, brain=None) -> dict:
+    """Build the summary for a finished session (writer = sync.NotesWriter, brain = brain.Brain)."""
     transcript = writer.timed_transcript()
     slides = writer.slide_text()
+    tasks = brain.task_list() if brain else []
+    context = ", ".join(x for x in ((brain.context, brain.topic) if brain else ()) if x and x != "listening")
     sheet = None
     if config.ai_provider():
         try:
-            print(f"[study sheet] asking {config.ai_provider()} to write the study sheet...")
-            sheet = ai_sheet(writer.course, transcript, slides)
+            print(f"[summary] asking {config.ai_provider()} to write the summary...")
+            sheet = ai_sheet(writer.course, transcript, slides, context,
+                             "; ".join(t["task"] for t in tasks))
         except Exception as e:
-            print(f"[study sheet] AI failed ({e}); using offline version")
+            print(f"[summary] AI failed ({e}); using offline version")
     if sheet is None:
         sheet = offline_sheet(writer.course, writer.transcript(), slides)
 
     date = writer.started
+    known = {re.sub(r"[^a-z0-9]", "", t["task"].lower()) for t in sheet.get("todos", [])}
+    for t in tasks:
+        if t.get("done") or re.sub(r"[^a-z0-9]", "", t["task"].lower()) in known:
+            continue
+        days = 3
+        if t.get("due"):
+            try:
+                days = max(0, (datetime.strptime(t["due"][:10], "%Y-%m-%d") - date).days + 1)
+            except ValueError:
+                pass
+        sheet.setdefault("todos", []).append({"task": t["task"], "due_in_days": days})
+    if context:
+        sheet["context"] = context
+
     out = {"md": writer.folder / "study_sheet.md", "ics": writer.folder / "reminders.ics"}
     out["md"].write_text(to_markdown(sheet, writer.course, date), encoding="utf-8")
     to_ics(sheet, writer.course, date, out["ics"])
     if to_docx(sheet, writer.course, date, writer.folder / "study_sheet.docx"):
         out["docx"] = writer.folder / "study_sheet.docx"
     (writer.folder / "study_sheet.json").write_text(json.dumps(sheet, indent=2), encoding="utf-8")
+    if brain:
+        brain.write_files()
+        out["tasks_md"] = writer.folder / "tasks.md"
+        out["tasks_ics"] = writer.folder / "tasks.ics"
+    try:
+        import obsidian
+        writer.obsidian_note = obsidian.export(writer, sheet, tasks, context)
+    except Exception as e:
+        print(f"[obsidian] could not save: {e}")
     return out

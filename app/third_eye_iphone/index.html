@@ -18,10 +18,10 @@
 <header>
   <div class="brand">
     <svg class="eye" id="eye" viewBox="0 0 24 24" aria-label="Recording light"><path class="mark" d="M1 12s4.2-7 11-7 11 7 11 7-4.2 7-11 7S1 12 1 12z" fill="none" stroke-width="1.6"/><circle class="pupil" cx="12" cy="12" r="3.6"/></svg>
-    <span>Third Eye</span><span class="course" id="hdrCourse"></span>
+    <span>Third Eye</span><span class="course" id="hdrCourse"></span><span class="chip hidden" id="hdrCtx"></span>
   </div>
   <div class="spacer"></div>
-  <div class="state" id="state"><b id="stateWord">Not recording</b> <span id="timer"></span></div>
+  <div class="state" id="state"><b id="stateWord">Not listening</b> <span id="timer"></span></div>
 </header>
 <div id="toast" class="toast hidden" role="status"></div>
 
@@ -30,24 +30,24 @@
   <section id="v-record" class="view">
     <div id="setup" class="stack">
       <div class="panel">
-        <h2 class="panel-title">Class</h2>
+        <h2 class="panel-title">Session</h2>
         <div class="pad">
-          <input type="text" id="courseInput" maxlength="60" placeholder="Which class is this?" autocomplete="off" autocapitalize="words" aria-label="Class name">
+          <input type="text" id="courseInput" maxlength="60" placeholder="What is this? (optional)" autocomplete="off" autocapitalize="words" aria-label="Session name">
           <p class="note" id="supportNote"></p>
-          <button class="btn primary big" id="startBtn">Start recording</button>
-          <p class="fine">The eye in the corner is your recording light. It glows red while Third Eye records.
-            Check your school's rules before recording a lecture; accessibility services can often approve it.
-            Keep this screen open and unlocked. iPhone stops recording when it sleeps.</p>
+          <button class="btn primary big" id="startBtn">Start listening</button>
+          <p class="fine">Third Eye works out what is going on by itself: a lecture, a meeting, a conversation.
+            Say "Hey Third Eye" and a question to ask it anything. The eye in the corner glows red while it listens.
+            Ask people before you record them. Keep this screen open and unlocked; iPhone stops listening when it sleeps.</p>
         </div>
       </div>
       <div class="panel">
         <h2 class="panel-title">Setup</h2>
         <div class="pad">
           <label class="field-label" for="camSelect">Camera</label>
-          <select id="camSelect"><option value="environment">Back camera (aim at the board)</option><option value="user">Front camera</option><option value="off">No camera</option></select>
+          <select id="camSelect"><option value="environment">Back camera</option><option value="user">Front camera</option><option value="off">No camera</option></select>
           <label class="field-label" for="fileInput" style="margin-top:14px">Or use a recording</label>
           <input type="file" id="fileInput" accept="audio/*,video/*">
-          <p class="note">Pick an audio file to run a lecture without the microphone.</p>
+          <p class="note">Pick an audio file to run a session without the microphone.</p>
         </div>
       </div>
     </div>
@@ -58,30 +58,34 @@
         <div class="pad">
           <div class="mic-line"><span>Mic</span><div class="meter"><div id="micMeter"></div></div><span id="slideNote" class="mono">0 slides</span></div>
           <div class="actions">
-            <button class="btn warnbtn big" id="askBtn">Ask a question</button>
+            <button class="btn warnbtn big" id="askBtn">Talk to Third Eye</button>
             <button class="btn" id="pauseBtn">Pause</button>
-            <button class="btn danger" id="endBtn">End lecture</button>
+            <button class="btn danger" id="endBtn">End session</button>
           </div>
           <div class="statusline" id="status"></div>
         </div>
       </div>
+      <div class="panel hidden" id="tasksPanel">
+        <h2 class="panel-title">Tasks <span class="mono right" id="taskCount"></span></h2>
+        <div class="pad" id="taskList"></div>
+      </div>
       <div class="panel notebook">
         <h2 class="panel-title">Notes <span class="mono right" id="countNote"></span></h2>
         <div id="feed"></div>
-        <div class="askline"><input type="text" id="askInput" placeholder="Type a question" aria-label="Type a question about the lecture" enterkeyhint="send"><button class="btn" id="askSend">Ask</button></div>
+        <div class="askline"><input type="text" id="askInput" placeholder="Ask Third Eye" aria-label="Type a question for Third Eye" enterkeyhint="send"><button class="btn" id="askSend">Ask</button></div>
       </div>
     </div>
 
     <div id="finishing" class="center hidden">
       <svg class="eye big-eye" viewBox="0 0 24 24"><path class="mark" d="M1 12s4.2-7 11-7 11 7 11 7-4.2 7-11 7S1 12 1 12z" fill="none" stroke-width="1.2"/><circle class="pupil" cx="12" cy="12" r="3.6"/></svg>
-      <h2>Writing your study sheet</h2>
-      <p class="note">Finishing the transcript and pulling out the key points, terms and homework.</p>
+      <h2>Writing your summary</h2>
+      <p class="note">Finishing the transcript and pulling out the key points, terms and tasks.</p>
     </div>
 
     <div id="done" class="stack hidden"></div>
   </section>
 
-  <!-- ===== LECTURES ===== -->
+  <!-- ===== SESSIONS ===== -->
   <section id="v-lectures" class="view hidden">
     <div id="lecList" class="stack"></div>
     <div id="lecDetail" class="stack hidden"></div>
@@ -92,8 +96,8 @@
 </main>
 
 <nav class="tabbar">
-  <button data-tab="record" class="on">Record</button>
-  <button data-tab="lectures">Lectures</button>
+  <button data-tab="record" class="on">Listen</button>
+  <button data-tab="lectures">Sessions</button>
   <button data-tab="settings">Settings</button>
 </nav>
 

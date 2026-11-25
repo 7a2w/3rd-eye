@@ -1,7 +1,41 @@
 # Third Eye: AI earpiece prototype (laptop demo)
 
-This prototype runs on a laptop in place of the earpiece. It's a working demo of an AI earpiece for
-university students with ADHD, insomnia, or attention problems.
+This prototype runs on a laptop in place of the earpiece. Third Eye is an always-on AI assistant you
+wear: it listens to whatever is going on (a class, a meeting, a conversation, a call), works out what
+the situation is, and handles the rest without being asked. It was built for university students with
+ADHD, insomnia, or attention problems, but it works anywhere.
+
+What it does on its own:
+
+- Starts listening as soon as the window opens. No setup needed.
+- Works out the situation (lecture, meeting, conversation, studying, phone call...) and names the session.
+- Notes tasks, deadlines and events as people mention them, with dates worked out ("next Friday at 3"),
+  and keeps `tasks.ics` up to date for your calendar.
+- Explains a term or an unanswered question in your ear, at most once every 45 seconds.
+- Answers anything when you say **"Hey Third Eye, ..."**. It also knows the time, the date, your open
+  tasks, and can catch you up ("what did I miss?").
+- After 10 minutes of quiet it ends the session, writes a summary and starts a new one.
+- Saves every session to your Obsidian vault, if you have one.
+
+### AI key
+
+It works offline with simple rules, but it is much smarter with an AI key. Set one of these, then restart:
+
+| Key | Cost | Get it |
+|---|---|---|
+| `GEMINI_API_KEY` | Free tier | aistudio.google.com |
+| `ANTHROPIC_API_KEY` | Paid | console.anthropic.com |
+
+```
+setx GEMINI_API_KEY "your-key"
+```
+
+### Obsidian
+
+Third Eye finds the vault Obsidian last had open and writes each session to `Third Eye/` inside it:
+one note per session (summary, terms, tasks, pictures, transcript) and a running `Third Eye/Tasks.md`.
+Tasks use the `- [ ] task 📅 2026-11-28` form, so the Tasks and Dataview plugins pick them up.
+To use a different vault: `setx OBSIDIAN_VAULT "C:\Users\you\Documents\MyVault"`.
 
 | Real device | In this demo |
 |---|---|
@@ -23,13 +57,14 @@ py -3.12 main.py
 
 | In the dashboard | What it does |
 |---|---|
-| **Start recording** | Starts the lecture: REC light on, transcript and slides begin |
-| **Ask a question** | Listens to your question for 6 s, then answers out loud |
+| (nothing) | It starts listening by itself when the window opens |
+| Say **"Hey Third Eye, ..."** | Ask anything, hands free |
+| **Talk to Third Eye** | Listens to your question for 6 s, then answers out loud |
 | Type in the box + **Enter** | Ask a typed question (works during and after the lecture) |
 | **Pause** / **Resume** | Privacy mode: nothing is recorded until you resume |
-| **End lecture** | Finishes the transcript, then builds the study sheet + reminders |
+| **End session** | Finishes the transcript, then builds the study sheet + reminders |
 | **Look again** | Looks for cameras again after plugging one in |
-| **New lecture** / **Quit** | Start another class / close the program |
+| **New session** / **Quit** | Start another session / close the program (closing the window quits too) |
 
 | Command-line options (add after `main.py`) | |
 |---|---|
@@ -41,7 +76,9 @@ py -3.12 main.py
 | `--mute` | Don't play that recording out loud |
 | `--model tiny.en` / `small.en` | Faster / more accurate speech-to-text (default `base.en`) |
 | `--port 8001` | Use another port if 8000 is busy |
-| `--no-browser` | Don't open the dashboard automatically |
+| `--no-browser` | Don't open the window automatically |
+| `--manual` | Wait for **Start listening** instead of starting right away |
+| `--browser` | Use a browser tab instead of the app window |
 
 | Other useful commands | |
 |---|---|
@@ -120,7 +157,7 @@ Closing the browser tab doesn't stop the program, so press **Ctrl+C** in the ter
 
 **The dashboard has three screens:**
 1. **Setup:** type the course, pick your camera (with a live preview) and your microphone (talk and the meter
-   bar should move). Click **Start recording**. Nothing is recorded before you click it.
+   bar should move). Third Eye starts listening as soon as the window opens (use --manual to wait for a click).
 2. **Recording:** camera with the REC light, live notes on the right (transcript, captured slides, your
    questions). **Ask a question** listens to your question for 6 seconds, then answers out loud. You can
    also type a question at the bottom. **Pause** stops all recording. **End lecture** builds the study sheet.

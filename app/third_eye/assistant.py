@@ -1,8 +1,8 @@
 """
-Live assistant: you ask a question out loud, it answers out loud.
+Live assistant: you ask out loud (or say "Hey Third Eye"), it answers out loud.
 
 Uses Claude (ANTHROPIC_API_KEY) or Google Gemini (GEMINI_API_KEY, which has a free tier).
-Without a key it falls back to searching the lecture transcript for the most relevant sentences,
+Without a key it falls back to searching what it heard for the most relevant sentences,
 so the demo still works offline.
 """
 import json
@@ -122,31 +122,40 @@ def offline_answer(question: str, transcript: str) -> str:
     q = set(keywords(question))
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", transcript) if len(s.split()) > 3]
     if not q or not sentences:
-        return "I don't have enough from the lecture yet to answer that."
+        return "I haven't heard enough yet to answer that. Add an AI key for general questions."
     scored = sorted(sentences, key=lambda s: len(q & set(keywords(s))), reverse=True)
     best = [s for s in scored[:2] if q & set(keywords(s))]
     if not best:
-        return "The professor hasn't mentioned that yet in this lecture."
-    return "From the lecture: " + " ".join(best)
+        return "That hasn't come up yet. Add an AI key for general questions."
+    return "From what I heard: " + " ".join(best)
 
 
 class Assistant:
-    SYSTEM = ("You are a discreet study assistant speaking through an earpiece to a university student "
-              "during a lecture. The student may have ADHD or be tired, so answer in 1-3 short, clear "
-              "spoken sentences. No lists, no markdown. Use the lecture transcript when it is relevant; "
-              "if you add general knowledge, keep it consistent with what the professor said.")
+    SYSTEM = ("You are Third Eye, a discreet AI assistant in the user's earpiece. You can hear what is "
+              "happening around them. The user may have ADHD or be tired, so answer in 1-3 short, clear "
+              "spoken sentences. No lists, no markdown. Use what you heard when it is relevant, otherwise "
+              "answer from general knowledge.")
 
     def __init__(self):
         self.provider = config.ai_provider()
         self.online = bool(self.provider)
         print(f"[assistant] {self.provider + ' API' if self.online else 'offline mode (no AI key set)'}")
 
-    def answer(self, question: str, recent_transcript: str, slide_text: str = "") -> str:
+    def answer(self, question: str, recent_transcript: str, slide_text: str = "", situation: str = "",
+               tasks=None) -> str:
+        quick = quick_answer(question, recent_transcript, tasks)
+        if quick:
+            return quick
         if self.online:
             try:
-                prompt = (f"Recent lecture transcript:\n{recent_transcript or '(nothing yet)'}\n\n"
-                          f"Text on the current slide/board:\n{slide_text or '(none)'}\n\n"
-                          f"Student's question: {question}")
+                task_lines = "\n".join(f"- {t['task']}" + (f" (due {t['due']})" if t.get("due") else "")
+                                        for t in (tasks or []) if not t.get("done")) or "(none)"
+                prompt = (f"Situation: {situation or 'unknown'}\n"
+                          f"Now: {time.strftime('%A %Y-%m-%d %H:%M')}\n\n"
+                          f"What you heard recently:\n{recent_transcript or '(nothing yet)'}\n\n"
+                          f"Text on the screen or board:\n{slide_text or '(none)'}\n\n"
+                          f"The user's open tasks:\n{task_lines}\n\n"
+                          f"User: {question}")
                 t0 = time.time()
                 answer = call_ai(self.SYSTEM, prompt, max_tokens=200, fast=True)
                 print(f"[assistant] answered in {time.time() - t0:.1f}s")
@@ -154,6 +163,25 @@ class Assistant:
             except Exception as e:
                 print(f"[assistant] API error, using offline answer: {e}")
         return offline_answer(question, recent_transcript)
+
+
+def quick_answer(question: str, transcript: str, tasks=None) -> str:
+    """Things it can answer without an AI: time, date, tasks, a recap."""
+    q = question.lower()
+    if re.search(r"\bwhat time\b|\bthe time\b", q):
+        return time.strftime("It's %I:%M %p.").replace(" 0", " ")
+    if re.search(r"\b(what('s| is) the date|what day|today's date)\b", q):
+        return time.strftime("It's %A, %B %d.").replace(" 0", " ")
+    if re.search(r"\b(my tasks|to ?do|what do i (need|have) to do|deadlines?|reminders?)\b", q):
+        open_tasks = [t for t in (tasks or []) if not t.get("done")]
+        if not open_tasks:
+            return "You have no open tasks from this session."
+        items = "; ".join(t["task"] + (f", due {t['due']}" if t.get("due") else "") for t in open_tasks[:4])
+        return f"You have {len(open_tasks)} open: {items}."
+    if re.search(r"\b(what did i miss|catch me up|recap|summari[sz]e|what (was|were) (they|we|he|she) (saying|talking about))\b", q):
+        sentences = [s for s in re.split(r"(?<=[.!?])\s+", transcript) if len(s.split()) > 4]
+        return ("Lately: " + " ".join(sentences[-3:])) if sentences else "Nothing much has been said yet."
+    return ""
 
 
 # ---------- Text to speech (the earpiece "voice") ----------

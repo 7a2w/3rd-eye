@@ -1,4 +1,4 @@
-// Lecture notes kept in IndexedDB, a port of sync.py NotesWriter.
+// Session notes kept in IndexedDB, a port of sync.py NotesWriter.
 import { bus } from './bus.js';
 import { fmtTime } from './util.js';
 
@@ -27,9 +27,9 @@ export class NotesWriter {
 
   static async create(course) {
     const d = new Date();
-    const slug = (course || 'Lecture').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    const slug = (course || 'Session').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '');
     const id = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}_${slug}`;
-    const n = new NotesWriter({ id, course: course || 'Lecture', started: d.toISOString(), entries: [], sheet: null });
+    const n = new NotesWriter({ id, course: course || 'Session', started: d.toISOString(), entries: [], sheet: null, tasks: [], context: '', topic: '' });
     await n._save(); return n;
   }
   static async load(id) {
@@ -45,6 +45,9 @@ export class NotesWriter {
   addSlide(t, img, text = '') { this._add({ t, kind: 'slide', img, text }); }
   addQa(t, q, a) { this._add({ t, kind: 'qa', q, a }); }
   addGap(t, t1) { this._add({ t, kind: 'gap', t1 }); }
+  addInsight(t, q, a) { this._add({ t, kind: 'insight', q, a }); }
+  addTask(t, text, due) { this._add({ t, kind: 'task', text, due: due || null }); }
+  addContext(t, text, topic) { this._add({ t, kind: 'context', text, topic: topic || '' }); }
   setSlideText(img, text) {
     const e = this.entries.find((x) => x.kind === 'slide' && x.img === img);
     if (e) { e.text = text; this.version++; bus.emit('entries', { version: this.version }); this._later(); }
@@ -68,6 +71,9 @@ export class NotesWriter {
       if (e.kind === 'speech') out.push(`**[${fmtTime(e.t)}]** ${e.text}`, '');
       else if (e.kind === 'slide') out.push(`**[${fmtTime(e.t)}] Slide** (${e.img})`, '', e.text ? e.text.split('\n').map((l) => '> ' + l).join('\n') : '> No readable text.', '');
       else if (e.kind === 'qa') out.push(`**[${fmtTime(e.t)}] You asked:** ${e.q}`, '', `**Answer:** ${e.a}`, '');
+      else if (e.kind === 'insight') out.push(`**[${fmtTime(e.t)}] Third Eye on ${e.q || 'this'}:** ${e.a}`, '');
+      else if (e.kind === 'task') out.push(`- [ ] ${e.text}${e.due ? ` (due ${e.due})` : ''}`, '');
+      else if (e.kind === 'context') out.push(`---`, '', `*[${fmtTime(e.t)}] Now: ${e.text}${e.topic ? ' · ' + e.topic : ''}*`, '');
       else if (e.kind === 'gap') out.push(`*[${fmtTime(e.t)} to ${fmtTime(e.t1)}] Recording was interrupted.*`, '');
     }
     return out.join('\n');
@@ -75,7 +81,7 @@ export class NotesWriter {
 
   _later() { clearTimeout(this._timer); this._timer = setTimeout(() => this._save(), 800); }
   async _save() {
-    const rec = { id: this.id, course: this.course, started: this.started, entries: this.entries, sheet: this.sheet };
+    const rec = { id: this.id, course: this.course, started: this.started, entries: this.entries, sheet: this.sheet, tasks: this.tasks || [], context: this.context || '', topic: this.topic || '' };
     await tx('lectures', 'readwrite', (s) => s.put(rec));
     await this.saveFile('live_notes.md', new Blob([this.renderMarkdown()], { type: 'text/markdown' }));
   }
@@ -100,7 +106,7 @@ export async function listLectures() {
   const d = await db();
   const all = await new Promise((res) => { const r = d.transaction('lectures').objectStore('lectures').getAll(); r.onsuccess = () => res(r.result); });
   return all.sort((a, b) => b.started.localeCompare(a.started))
-    .map((l) => ({ id: l.id, course: l.course, started: l.started, entryCount: l.entries.length, hasSheet: !!l.sheet }));
+    .map((l) => ({ id: l.id, course: l.course, started: l.started, entryCount: l.entries.length, hasSheet: !!l.sheet, context: l.context || '' }));
 }
 
 export async function deleteLecture(id) {

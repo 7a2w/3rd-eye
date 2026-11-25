@@ -1,9 +1,9 @@
-/* Conquer style for the phone: black ground, hairlines, sharp corners, caps labels, mono numbers, teal accent, one white primary action. */
+/* Conquer style for the phone: black ground, hairlines, sharp corners, caps labels, mono numbers, purple accent, one white primary action. */
 :root{
   --bg:#000;--surface:#000;--surface-2:#050505;--surface-3:#0f0f0f;
   --hairline:rgba(255,255,255,.08);--line-strong:rgba(255,255,255,.15);--border-ctl:rgba(255,255,255,.36);
   --text:rgba(255,255,255,.93);--text-2:rgba(255,255,255,.72);--muted:rgba(255,255,255,.56);--faint:rgba(255,255,255,.38);
-  --accent:#35a996;--accent-fill:rgba(31,158,137,.18);
+  --accent:#a48ae4;--accent-fill:rgba(164,138,228,.18);
   --rec:#ff3355;--ask:#fdb42f;--warn:#ffc9a0;
   --ui:Inter,-apple-system,"SF Pro Text",system-ui,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
@@ -17,11 +17,12 @@ button,input,select{font:inherit;color:inherit}
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .right{float:right}
 a{color:var(--accent)}
-:focus-visible{outline:2px solid #1f9e89;outline-offset:2px}
+:focus-visible{outline:2px solid #8b6fd6;outline-offset:2px}
 
 header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:calc(10px + var(--safe-t)) 16px 10px;background:var(--surface);border-bottom:1px solid var(--hairline)}
 .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase}
 .course{font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted);font-size:12px;border-left:1px solid var(--line-strong);padding-left:10px;max-width:34vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip{font:600 10px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--accent);border:1px solid var(--accent);background:var(--accent-fill);padding:2px 6px;max-width:30vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .spacer{flex:1}
 .eye{width:24px;height:24px;flex:none}
 .eye .mark{stroke:var(--text)} .eye .pupil{fill:var(--text)}
@@ -78,7 +79,7 @@ details.panel>.field:last-of-type{margin-bottom:14px}
 .onair i{width:8px;height:8px;background:var(--rec)} .onair.paused i{background:var(--faint)} .onair.ask i{background:var(--ask)}
 .mic-line{display:flex;align-items:center;gap:10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .meter{flex:1;height:4px;background:var(--surface-3);border:1px solid var(--hairline)}
-.meter>div{height:100%;width:0;background:linear-gradient(90deg,#3e4a89,#1f9e89,#6ece58,#fde725);transition:width .1s linear}
+.meter>div{height:100%;width:0;background:linear-gradient(90deg,#3b1f6e,#7b4bc0,#a48ae4,#e2d6ff);transition:width .1s linear}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
 .actions .big{grid-column:1/-1}
 .statusline{margin-top:12px;font:11px var(--mono);color:var(--ask);min-height:16px;overflow-wrap:anywhere}
@@ -91,6 +92,11 @@ details.panel>.field:last-of-type{margin-bottom:14px}
 .entry figure img{width:100%;border:1px solid var(--hairline)} .entry figcaption{font-size:12px;color:var(--text-2);white-space:pre-wrap}
 .qa{border-left:2px solid var(--ask);padding-left:10px} .qa .q{font-size:12px;color:var(--muted)} .qa .a{margin-top:3px}
 .gap{font:11px var(--mono);color:var(--warn)}
+.qa.insight{border-left-color:var(--accent)} .qa.insight .q{color:var(--accent)}
+.task-line{font:12px var(--mono);color:var(--accent);overflow-wrap:anywhere} .task-line small{color:var(--muted)}
+.entry.ctx{display:block;border-bottom:0;padding:10px 0 4px}
+.ctx div{display:flex;align-items:center;gap:8px;font:600 10px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+.ctx div::before,.ctx div::after{content:"";flex:1;height:1px;background:var(--hairline)}
 .empty{color:var(--muted);font-size:13px;padding:12px 4px}
 .askline{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--hairline);background:var(--surface-2)}
 

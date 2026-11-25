@@ -9,12 +9,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  /* Conquer style: pure-black ground, hairlines, sharp corners, caps labels, mono numbers, teal accent, one white primary action */
+  /* Conquer style: pure-black ground, hairlines, sharp corners, caps labels, mono numbers, purple accent, one white primary action */
   :root{
     --bg:#000;--surface:#000;--surface-2:#050505;--surface-3:#0f0f0f;
     --hairline:rgba(255,255,255,.08);--rule:rgba(255,255,255,.08);--line-strong:rgba(255,255,255,.15);--border-ctl:rgba(255,255,255,.36);
     --text-hi:#fff;--text:rgba(255,255,255,.93);--text-2:rgba(255,255,255,.72);--muted:rgba(255,255,255,.56);--faint:rgba(255,255,255,.38);
-    --accent:#35a996;--accent-fill:rgba(31,158,137,.18);--focus:#1f9e89;
+    --accent:#a48ae4;--accent-fill:rgba(164,138,228,.18);--focus:#8b6fd6;
     --rec:#ff3355;--ask:#fdb42f;--warn:#ffc9a0;--danger:#ff3355;
     --ui:Inter,"Segoe UI",system-ui,sans-serif;--read:var(--ui);
     --mono:"JetBrains Mono",Consolas,"Courier New",monospace;
@@ -36,6 +36,10 @@
   .eye .mark,.eye .pupil{fill:var(--text)}
   .eye.rec .pupil{fill:var(--rec)} .eye.ask .pupil{fill:var(--ask)} .eye.paused .pupil{fill:var(--faint)}
   .classname{color:var(--muted);font-weight:400;font-size:12px;border-left:1px solid var(--line-strong);padding-left:10px;text-transform:none;letter-spacing:0}
+  .ctx{display:flex;align-items:center;gap:6px;font:500 10px var(--mono);color:var(--muted);border:1px solid var(--line-strong);padding:2px 8px;text-transform:none;letter-spacing:0}
+  .ctx b{color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+  .think{width:6px;height:6px;background:var(--accent);animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:.2}}
   .spacer{flex:1}
   .state{font:500 11px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
   .state b{color:var(--text);font-weight:600}
@@ -59,7 +63,7 @@
   select option{background:var(--surface-3)}
   .fieldname{display:block;font-size:10px;font-weight:600;color:var(--muted);margin:0 0 6px}
   .meter{height:4px;background:var(--surface-3);border:1px solid var(--hairline)}
-  .meter>div{height:100%;width:0;background:linear-gradient(90deg,#3e4a89,#1f9e89,#6ece58,#fde725);transition:width .1s linear}
+  .meter>div{height:100%;width:0;background:linear-gradient(90deg,#3b1f6e,#7b4bc0,#a48ae4,#e2d6ff);transition:width .1s linear}
   .note{font-size:12px;color:var(--muted)}
   .warn{font-size:12px;color:var(--warn)}
 
@@ -91,6 +95,10 @@
   .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
   #askBtn{grid-column:1/-1;padding:12px}
   .statusline{margin-top:12px;font:11px var(--mono);color:var(--ask);min-height:18px}
+  .tasks{margin-top:12px;border-top:1px solid var(--hairline);padding-top:12px}
+  .tasks .todo{font-size:12.5px;margin-bottom:8px}
+  .tasks .todo small{display:inline;margin-left:6px}
+  .tasks .kind{font:600 9px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--accent);border:1px solid var(--accent-fill);padding:0 4px;margin-left:6px}
 
   .notebook{display:flex;flex-direction:column;height:calc(100vh - 100px);min-height:460px;background:var(--surface);border:1px solid var(--hairline)}
   .nb-head{display:flex;gap:16px;padding:0 14px;height:36px;align-items:center;background:var(--surface-2);border-bottom:1px solid var(--hairline)}
@@ -108,6 +116,15 @@
   .qa-block{border-left:2px solid var(--ask);padding-left:12px}
   .qa-block .q{font-size:12px;color:var(--muted)}
   .qa-block .a{font-size:14px;line-height:1.55;margin-top:4px}
+  .qa-block.insight{border-left-color:var(--accent)}
+  .qa-block.insight .q b{color:var(--accent);font-weight:600}
+  .task-line{font-size:13px;color:var(--accent);padding-top:2px}
+  .task-line small{font:11px var(--mono);color:var(--muted);margin-left:10px}
+  .ctx-entry .when{visibility:hidden}
+  .ctx-line{display:flex;align-items:center;gap:10px;font:500 10px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .ctx-line::after{content:"";flex:1;border-top:1px solid var(--line-strong)}
+  .ctx-line span{text-transform:none;letter-spacing:0}
+  .restart{display:flex;align-items:center;gap:10px;margin:10px 0 0;font:11px var(--mono);color:var(--muted)}
   .empty{color:var(--muted);font-size:13px;margin:24px 0 0 70px;max-width:44ch}
   .askline{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--hairline);background:var(--surface-2)}
 
@@ -164,6 +181,7 @@
     </svg>
     Third Eye
     <span class="classname" id="hdrCourse"></span>
+    <span class="ctx hidden" id="hdrCtx"><b id="ctxName"></b><span id="ctxTopic"></span><i class="think hidden" id="thinkDot" title="Thinking"></i></span>
   </div>
   <div class="spacer"></div>
   <div class="state" id="state"><b id="stateWord">Not recording</b> <span id="timer"></span></div>
@@ -174,8 +192,8 @@
   <!-- ============ SETUP ============ -->
   <section id="setup">
     <div>
-      <p class="ask-class">Which class is this?</p>
-      <input type="text" id="courseInput" maxlength="60" aria-label="Class name" autocomplete="off">
+      <p class="ask-class">What is this? (optional, Third Eye works it out)</p>
+      <input type="text" id="courseInput" maxlength="60" aria-label="Session name" autocomplete="off">
 
       <div class="setup-block">
         <label class="fieldname" for="micSelect">Microphone</label>
@@ -214,18 +232,22 @@
       </div>
       <div class="mic-line"><span>Mic</span><div class="meter"><div id="micMeterLive"></div></div></div>
       <div class="actions">
-        <button class="btn marigold" id="askBtn">Ask a question</button>
+        <button class="btn marigold" id="askBtn">Talk to Third Eye</button>
         <button class="btn quiet" id="pauseBtn">Pause</button>
-        <button class="btn tomato" id="endBtn">End lecture</button>
+        <button class="btn tomato" id="endBtn">End session</button>
       </div>
       <div class="statusline" id="status"></div>
+      <div class="tasks">
+        <span class="fieldname">Tasks</span>
+        <div id="taskList"></div>
+      </div>
     </div>
 
     <div class="notebook">
       <div class="nb-head"><h2 id="nbTitle">Notes</h2><span id="countNote"></span></div>
       <div id="feed"></div>
       <div class="askline">
-        <input type="text" id="askInput" aria-label="Type a question about the lecture">
+        <input type="text" id="askInput" aria-label="Type a question for Third Eye">
         <button class="btn small violet" id="askSend">Ask</button>
       </div>
     </div>
@@ -238,8 +260,8 @@
         <path class="mark" fill-rule="evenodd" d="M109 430.8 L109 432.8 L314.5 519.2 L317.5 519.2 L522.2 433.0 L522.2 431.0 L420.2 431.0 L317.2 474.2 L314.8 474.2 L212.2 431.0Z M91 123.0 L90.8 125.8 L92.2 135.8 L93.2 136.2 L107.8 137.2 L117.5 139.2 L133.2 144.0 L154.2 152.2 L166.5 158.8 L174.8 165.2 L180 172.2 L183.2 178.2 L186 185.5 L187.2 192.0 L187.2 203.5 L185.8 210.5 L182.8 217.8 L179 223.2 L174.5 228.2 L169.5 232.0 L164.5 234.5 L153.8 237.8 L138.8 237.8 L123.2 233.8 L121.2 233.8 L121.2 236.0 L137.5 257.5 L157.2 288.8 L173.5 317.2 L188.8 347.8 L195.8 363.8 L198 363.5 L200.8 297.5 L201.2 236.0 L200 184.5 L201.5 183.0 L204 183.8 L208.2 186.8 L228 203.0 L247.5 222.0 L267.2 244.2 L287 268.8 L303 290.0 L305.5 292.5 L311.5 301.2 L330 322.8 L350.5 342.2 L366.5 354.2 L378.2 361.5 L402 372.8 L423.8 379.5 L447 382.8 L458.5 383.2 L475.5 382.8 L490.8 380.2 L497.8 377.8 L504.5 374.2 L508.2 371.8 L518.5 362.2 L525 352.8 L529.8 341.5 L534 325.8 L534.2 312.8 L533 299.2 L529.2 286.2 L525.8 278.0 L523.2 274.5 L517.2 268.2 L509.2 262.2 L499.8 258.0 L489 256.2 L478 256.5 L471.8 257.8 L466.8 259.8 L461.5 262.5 L456 266.5 L446.5 276.8 L441.2 286.8 L439 296.2 L439 302.0 L441 310.2 L443.2 315.0 L448 321.5 L454 327.0 L462 331.8 L468.8 333.5 L475.5 333.0 L480 331.2 L485.5 327.2 L488 324.5 L490.5 320.2 L493.2 309.8 L493.2 303.5 L491.8 297.8 L490.2 294.5 L488.5 292.5 L485 290.0 L479.2 287.8 L470.5 287.2 L459.2 289.5 L458.2 288.5 L458.5 287.0 L460.2 284.5 L465.8 279.2 L473 275.0 L477.5 273.5 L481 273.0 L490.2 273.5 L499 277.2 L502.5 279.8 L507.5 284.8 L511.8 291.5 L515.5 303.0 L516.5 312.0 L516.2 320.8 L514.8 329.5 L510.2 339.8 L506.8 344.8 L499.8 351.8 L490.8 358.2 L484 361.5 L475.8 364.2 L462.2 366.2 L451 366.5 L431.2 363.2 L418 359.2 L409 355.8 L389.2 346.2 L381.8 341.8 L362.8 328.0 L342.5 309.0 L325.5 290.2 L316.8 279.5 L308.2 270.8 L298 258.2 L294 254.5 L285.2 243.8 L244.5 198.0 L244 196.2 L245 195.2 L246.2 195.2 L261.8 200.2 L279.2 203.8 L306.2 207.0 L339.8 206.8 L358.8 204.8 L385.5 200.5 L403.5 196.0 L418 191.5 L447.8 180.5 L482.5 163.5 L502 152.0 L512.5 148.5 L520.2 148.0 L524.2 148.2 L529 149.5 L538.2 154.0 L543 157.2 L549.5 163.0 L551.5 163.0 L552.2 133.0 L551.5 132.0 L538 131.0 L509.2 126.0 L496 122.8 L457.8 110.5 L403.8 88.5 L376 78.5 L354.2 72.8 L338.5 69.8 L316 67.8 L293 68.2 L282 69.5 L265.2 72.8 L235.2 81.5 L171.2 107.2 L155.8 112.8 L148.2 114.2 L134.2 118.2 L112.8 121.8 L91.5 122.5Z M491.5 141.0 L490 142.8 L482.2 146.2 L432.8 166.0 L427.2 167.2 L415.8 171.5 L396.8 177.2 L380.5 181.5 L362.8 185.0 L333.5 188.2 L304.8 188.5 L287.5 187.0 L269 184.5 L253 180.8 L232 174.2 L210.2 166.2 L182.8 153.2 L156.8 139.2 L146.5 133.0 L145.5 131.8 L145.5 130.8 L146.5 129.8 L153.2 128.0 L172.5 121.2 L232 98.0 L241.8 94.8 L243.5 94.8 L244.5 95.5 L244.5 97.0 L241 102.2 L237.8 108.8 L235.8 115.2 L235.2 128.8 L238.2 140.5 L240.8 145.5 L245.8 152.2 L252.8 159.5 L258 163.2 L269 168.5 L274 170.2 L288 172.8 L297 172.8 L307 171.2 L316.8 168.2 L323.5 165.2 L333 158.8 L337.8 154.2 L341.8 149.2 L347 139.0 L348.8 133.2 L349.8 126.8 L349 115.2 L346 106.5 L342.5 99.8 L340.2 96.5 L334.5 90.5 L334.5 89.2 L335.2 88.5 L337.5 88.5 L360.8 93.5 L379 99.2 L456 129.0 L490.2 139.2Z M84.2 84.5 L88.2 86.8 L95.8 89.2 L102 90.2 L114.5 90.5 L127.2 89.2 L155.2 82.0 L182.5 73.2 L196 68.0 L221.8 59.2 L237.5 55.0 L264.8 49.5 L284.8 47.2 L294.8 46.8 L324.8 47.2 L343.2 49.2 L364 52.8 L392.2 59.2 L432.5 73.5 L460.2 81.2 L476 84.8 L490.2 87.0 L511.5 87.8 L521 86.8 L526 85.8 L536.5 82.0 L542 79.0 L542 77.0 L531.8 77.5 L514.8 77.2 L503.5 76.0 L492.2 73.8 L473.2 68.0 L433.5 50.8 L416.2 44.2 L393 37.2 L371.8 32.0 L346 27.2 L325.2 25.0 L295.8 24.5 L283 25.0 L264.8 27.2 L244.5 31.8 L233.2 35.2 L214.8 42.5 L176 59.5 L135.5 74.0 L124.5 77.0 L107.2 80.2 L84.2 82.5Z"/>
         <circle class="pupil" cx="292.0" cy="120.9" r="57.7"/>
       </svg>
-      <h2>Writing your study sheet</h2>
-      <p class="note">Finishing the transcript and pulling out the key points, terms and homework.</p>
+      <h2>Writing your summary</h2>
+      <p class="note">Finishing the transcript and pulling out the key points, terms and tasks.</p>
     </div>
   </section>
 
@@ -251,9 +273,10 @@
         <h1 id="sheetTitle"></h1>
         <p id="sheetTldr"></p>
         <p class="warn hidden" id="sheetNote"></p>
+        <p class="restart hidden" id="restartLine"><span id="restartText"></span><button class="btn small quiet" id="holdBtn">Stay on this page</button></p>
       </div>
       <div style="display:flex;gap:10px">
-        <button class="btn violet" id="newBtn">New lecture</button>
+        <button class="btn violet" id="newBtn">New session</button>
         <button class="btn quiet" id="quitBtn">Quit</button>
       </div>
     </div>
@@ -263,15 +286,15 @@
         <section><h3>Key points</h3><ul id="sheetPoints"></ul></section>
         <section><h3>Test yourself</h3><ol id="sheetQs"></ol>
           <p class="note" style="margin-top:10px">Answer out loud before you look at your notes.</p></section>
-        <section id="confusingCard" class="hidden"><h3>Ask the professor</h3><ul id="sheetConfusing"></ul></section>
+        <section id="confusingCard" class="hidden"><h3>Follow up on</h3><ul id="sheetConfusing"></ul></section>
       </div>
       <div>
         <section><h3>Key terms</h3><dl class="terms" id="sheetTerms"></dl></section>
-        <section><h3>Homework and deadlines</h3><div id="sheetTodos"></div></section>
+        <section><h3>Tasks and deadlines</h3><div id="sheetTodos"></div></section>
         <section><h3>Review again on</h3><div class="reviews" id="sheetReviews"></div></section>
         <section><h3>Files</h3><div class="files" id="downloads"></div><p class="note" id="folderHint"></p></section>
-        <section><h3>Ask about this lecture</h3>
-          <div class="askline" style="border:0;padding:0;background:none"><input type="text" id="askInputDone" aria-label="Ask about this lecture"
+        <section><h3>Ask about this session</h3>
+          <div class="askline" style="border:0;padding:0;background:none"><input type="text" id="askInputDone" aria-label="Ask about this session"
             style="border-bottom:1px solid var(--border-ctl)"><button class="btn small violet" id="askSendDone">Ask</button></div>
           <div id="doneQA"></div></section>
       </div>
@@ -348,7 +371,7 @@ function renderFeed() {
   const feed = $('feed');
   const nearBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 80;
   feed.innerHTML = '';
-  if (!entries.length) feed.appendChild(el('p', 'empty', 'Notes appear here as soon as the professor starts talking.'));
+  if (!entries.length) feed.appendChild(el('p', 'empty', 'Listening. Notes appear as people talk. Say "Hey Third Eye" to ask anything.'));
   let lines = 0;
   for (const e of entries) {
     const row = el('div', 'entry'); row.appendChild(el('div', 'when', clock(e.t)));
@@ -360,6 +383,21 @@ function renderFeed() {
       img.src = '/img/' + encodeURIComponent(e.img); img.alt = 'Captured slide'; img.onclick = () => openLight(img.src);
       fig.append(img, el('figcaption', null, e.text || 'No readable text on this one.'));
       row.appendChild(fig);
+    } else if (e.kind === 'insight') {
+      row.classList.add('qa-entry');
+      const b = el('div', 'qa-block insight'), q = el('div', 'q');
+      q.appendChild(el('b', null, 'Third Eye'));
+      if (e.q) q.append(' · ' + e.q);
+      b.append(q, el('div', 'a', e.a)); row.appendChild(b);
+    } else if (e.kind === 'task') {
+      const line = el('div', 'task-line', 'Noted task: ' + e.text);
+      if (e.due) line.appendChild(el('small', null, 'due ' + e.due));
+      row.appendChild(line);
+    } else if (e.kind === 'context') {
+      row.classList.add('ctx-entry');
+      const line = el('div', 'ctx-line', 'Now: ' + e.text);
+      if (e.topic) line.appendChild(el('span', null, '· ' + e.topic));
+      row.appendChild(line);
     } else {
       row.classList.add('qa-entry'); row.appendChild(qaNode(e));
     }
@@ -375,16 +413,31 @@ function qaNode(e) {
   b.append(el('div', 'q', 'You asked: ' + e.q), el('div', 'a', e.a));
   return b;
 }
+function renderTasks(tasks) {
+  const sig = JSON.stringify(tasks);
+  if (lastLists.tasks === sig) return;
+  lastLists.tasks = sig;
+  const box = $('taskList'); box.innerHTML = '';
+  if (!tasks.length) { box.appendChild(el('p', 'note', 'Tasks, deadlines and events it hears show up here.')); return; }
+  for (const x of tasks) {
+    const row = el('label', 'todo'), cb = el('input'); cb.type = 'checkbox'; cb.checked = !!x.done;
+    cb.onchange = () => post('/api/task', {id: x.id, done: cb.checked});
+    const txt = el('span', null, x.task);
+    if (x.kind) txt.appendChild(el('span', 'kind', x.kind));
+    if (x.due) txt.appendChild(el('small', null, x.due));
+    row.append(cb, txt); box.appendChild(row);
+  }
+}
 function openLight(src) { $('lightImg').src = src; $('lightbox').classList.remove('hidden'); }
 $('lightbox').onclick = () => $('lightbox').classList.add('hidden');
 
 /* ---------- the study sheet ---------- */
 function renderSheet() {
   const sh = S.sheet || {};
-  $('sheetTitle').textContent = sh.title || S.course;
+  $('sheetTitle').textContent = sh.title || (S.brain || {}).title || S.course || 'Session';
   $('sheetTldr').textContent = sh.tldr || '';
   $('sheetNote').textContent = sh._note || ''; $('sheetNote').classList.toggle('hidden', !sh._note);
-  $('savedNote').textContent = `Saved after ${clock(toSeconds(S.elapsed))} of lecture`;
+  $('savedNote').textContent = `Saved after ${clock(toSeconds(S.elapsed))} of listening`;
   const fill = (id, arr, fn) => { const p = $(id); p.innerHTML = ''; (arr || []).forEach(x => fn(x, p)); };
   fill('sheetPoints', sh.key_points, (x, p) => p.appendChild(el('li', null, x)));
   fill('sheetQs', sh.exam_questions, (x, p) => p.appendChild(el('li', null, x)));
@@ -394,7 +447,7 @@ function renderSheet() {
     const txt = el('span', null, x.task); txt.appendChild(el('small', null, `Due in about ${plural(x.due_in_days ?? 3, 'day')}`));
     row.append(cb, txt); p.appendChild(row);
   });
-  if (!(sh.todos || []).length) $('sheetTodos').appendChild(el('p', 'note', 'No homework or deadlines came up.'));
+  if (!(sh.todos || []).length) $('sheetTodos').appendChild(el('p', 'note', 'No tasks or deadlines came up.'));
   $('sheetReviews').innerHTML = '';
   (S.reviews || []).forEach(r => $('sheetReviews').appendChild(el('div', null, r)));
   fill('sheetConfusing', sh.confusing_parts, (x, p) => p.appendChild(el('li', null, x)));
@@ -405,6 +458,8 @@ function renderSheet() {
   if (files.docx) add(files.docx, 'Study sheet for Word', 'violet');
   if (files.ics) add(files.ics, 'Add review dates to calendar', 'quiet');
   if (files.md) add(files.md, 'Study sheet as text', 'quiet');
+  if (files.tasks_md) add(files.tasks_md, 'Task list', 'quiet');
+  if (files.tasks_ics) add(files.tasks_ics, 'Add tasks to calendar', 'quiet');
   add('live_notes.md', 'Full transcript', 'quiet');
   $('folderHint').textContent = 'Also saved in ' + (S.folder || '');
 }
@@ -430,7 +485,18 @@ async function poll() {
     : ({setup: 'Not recording', finishing: 'Saving', done: 'Saved'}[S.phase]);
   $('timer').textContent = live || S.phase === 'finishing' ? clock(toSeconds(S.elapsed)) : '';
   $('hdrCourse').textContent = S.phase === 'setup' ? '' : S.course;
-  $('nbTitle').textContent = S.course || 'Notes';
+  const brain = S.brain || null;
+  $('hdrCtx').classList.toggle('hidden', !brain || !brain.context || S.phase === 'setup');
+  if (brain) {
+    $('ctxName').textContent = brain.context || '';
+    $('ctxTopic').textContent = brain.topic ? '· ' + brain.topic : '';
+    $('thinkDot').classList.toggle('hidden', !brain.thinking);
+  }
+  $('nbTitle').textContent = (brain && brain.title) || S.course || 'Session';
+  renderTasks((brain && brain.tasks) || []);
+  const restart = S.phase === 'done' && typeof S.restart_in === 'number';
+  $('restartLine').classList.toggle('hidden', !restart);
+  if (restart) $('restartText').textContent = `New session starts in ${Math.ceil(S.restart_in)}s`;
   $('aiNote').textContent = S.ai === 'offline' ? 'Answers from your notes only' : `Answers by ${S.ai}`;
 
   updateCamera();
@@ -453,7 +519,7 @@ async function poll() {
   if (S.phase === 'setup') {
     if (!courseTouched && S.course && !$('courseInput').value) $('courseInput').value = S.course;
     const sb = $('startBtn');
-    if (S.model === 'ready') { sb.disabled = !!S.mic.error; sb.textContent = 'Start recording'; }
+    if (S.model === 'ready') { sb.disabled = !!S.mic.error; sb.textContent = 'Start listening'; }
     else if (S.model === 'loading') { sb.disabled = true; sb.textContent = 'Loading speech model…'; }
     else { sb.disabled = true; sb.textContent = "Speech model didn't load. See the black window."; }
   }
@@ -461,7 +527,7 @@ async function poll() {
   const ab = $('askBtn');
   ab.disabled = S.asking;
   ab.innerHTML = S.ask_remaining > 0 ? `Listening… ${Math.ceil(S.ask_remaining)}`
-    : S.asking ? 'Working on it…' : 'Ask a question';
+    : S.asking ? 'Working on it…' : 'Talk to Third Eye';
   $('pauseBtn').textContent = S.paused ? 'Resume' : 'Pause';
   $('status').textContent = live ? S.status : '';
   $('askSend').disabled = $('askSendDone').disabled = S.asking;
@@ -469,7 +535,7 @@ async function poll() {
 
 /* ---------- events ---------- */
 $('courseInput').oninput = () => courseTouched = true;
-$('startBtn').onclick = () => post('/api/start', {course: $('courseInput').value.trim() || 'Lecture'});
+$('startBtn').onclick = () => post('/api/start', {course: $('courseInput').value.trim()});
 $('courseInput').onkeydown = e => { if (e.key === 'Enter' && !$('startBtn').disabled) $('startBtn').click(); };
 for (const id of ['camSelectSetup', 'camSelectLive'])
   $(id).onchange = e => { if (e.target.value !== 'scan') { lastCamKey = null; post('/api/camera', {index: e.target.value}); } };
@@ -477,8 +543,9 @@ $('rescanBtn').onclick = () => post('/api/rescan');
 $('micSelect').onchange = e => post('/api/mic', {index: e.target.value});
 $('askBtn').onclick = () => post('/api/ask');
 $('pauseBtn').onclick = () => post('/api/pause');
-$('endBtn').onclick = () => { if (confirm('End the lecture and write the study sheet?')) post('/api/end'); };
+$('endBtn').onclick = () => { if (confirm('End the session and write the summary?')) post('/api/end'); };
 $('newBtn').onclick = () => post('/api/new');
+$('holdBtn').onclick = () => post('/api/hold');
 $('quitBtn').onclick = () => { post('/api/quit');
   document.body.innerHTML = '<p style="padding:48px;font-family:var(--read);font-size:18px;color:rgba(255,255,255,.56)">Third Eye is closed. You can close this tab.</p>'; };
 function sendText(input) { const q = input.value.trim(); if (q) { post('/api/ask_text', {q}); input.value = ''; } }

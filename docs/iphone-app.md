@@ -10,6 +10,9 @@ For a quick test on a computer: `python -m http.server 8123` inside the folder, 
 
 ## What it does
 
+Third Eye is an always-listening assistant, not only a lecture recorder. It works out the situation (lecture, meeting, conversation, call), notes tasks and deadlines on its own, explains things unprompted, and answers when you say "Hey Third Eye, ...". After 10 minutes of quiet it ends the session and writes a summary.
+
+
 - Records the lecture from the mic and turns it into time-stamped notes. Speech to text uses Gemini or OpenAI with a key, or Safari's own recognizer with no key.
 - Watches the camera and saves a slide when the picture changes and holds still, then reads its text (Tesseract on the phone, or AI vision).
 - Ask a question by voice or by typing. Claude or Gemini answers from the notes so far; with no key it quotes the matching lines.

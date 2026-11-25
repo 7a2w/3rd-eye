@@ -92,9 +92,12 @@ def serve(app, port: int):
                 "/api/new": app.new_lecture,
                 "/api/rescan": lambda: threading.Thread(target=app.scan_cameras, daemon=True).start(),
                 "/api/quit": app.quit,
+                "/api/hold": app.hold,
             }
             if path in actions:
                 actions[path]()
+            elif path == "/api/task":
+                app.set_task(str(body.get("id", "")), bool(body.get("done")))
             elif path == "/api/ask_text":
                 app.ask_text(str(body.get("q", "")))
             elif path == "/api/camera":

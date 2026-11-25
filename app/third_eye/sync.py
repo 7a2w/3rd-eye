@@ -48,6 +48,15 @@ class NotesWriter:
     def add_qa(self, t: float, question: str, answer: str):
         self._add(t, "qa", f"**You asked:** {question}\n\n**Assistant:** {answer}")
 
+    def add_insight(self, t: float, about: str, text: str):
+        self._add(t, "insight", f"**{about}:** {text}" if about else text)
+
+    def add_task(self, t: float, task: str, due=None):
+        self._add(t, "task", task + (f" (due {due})" if due else ""))
+
+    def add_context(self, t: float, context: str, topic: str = ""):
+        self._add(t, "context", context + (f": {topic}" if topic else ""))
+
     def _add(self, t, kind, text):
         with self._lock:
             self.entries.append((t, kind, text))
@@ -67,6 +76,15 @@ class NotesWriter:
                 img = text.split("](", 1)[1].split(")", 1)[0] if "](" in text else ""
                 words = text.split("\n\n", 1)[1].replace("> ", "") if "\n\n" in text else ""
                 out.append({"t": t, "kind": kind, "img": img, "text": words})
+            elif kind == "insight":
+                about, sep, said = text.partition(":** ")
+                out.append({"t": t, "kind": kind, "q": about.strip("*") if sep else "", "a": said if sep else text})
+            elif kind == "task":
+                task, sep, due = text.rpartition(" (due ")
+                out.append({"t": t, "kind": kind, "text": task if sep else text, "due": due.rstrip(")") if sep else None})
+            elif kind == "context":
+                ctx, _, topic = text.partition(": ")
+                out.append({"t": t, "kind": kind, "text": ctx, "topic": topic})
             else:
                 q, _, a = text.partition("\n\n")
                 out.append({"t": t, "kind": kind, "q": q.replace("**You asked:** ", ""),
@@ -102,6 +120,12 @@ class NotesWriter:
                 out.append(f"`{fmt_time(t)}` {text}  ")
             elif kind == "slide":
                 out += ["", f"### Slide captured at {fmt_time(t)}", text, ""]
+            elif kind == "insight":
+                out += ["", f"> `{fmt_time(t)}` Third Eye: {text}", ""]
+            elif kind == "task":
+                out.append(f"`{fmt_time(t)}` **Task:** {text}  ")
+            elif kind == "context":
+                out += ["", f"## {text.capitalize()} ({fmt_time(t)})", ""]
             else:
                 out += ["", f"#### Question at {fmt_time(t)}", text, ""]
         return "\n".join(out) + "\n"
