@@ -124,7 +124,12 @@ AUTO_RESTART_SECONDS = 30    # after an automatic end, start a new session this 
 # ---------- Device (earpiece buttons, clips, offline queue) ----------
 CLIP_SECONDS = 30            # rolling buffer length; saving a clip copies this much audio and video
 CLIP_FPS = 2                 # camera frames kept per second in the buffer
-CLIP_KEY_PHRASES = ["due", "exam", "assignment", "deadline", "quiz", "test"]
+CLIP_KEY_PHRASES = [                      # moments worth keeping; a clip is saved as soon as one is heard
+    "due", "exam", "midterm", "final", "assignment", "homework", "deadline", "quiz", "test", "submit",
+    "important", "remember", "don't forget", "dont forget", "make sure", "pay attention", "key point", "will be on",
+    "write this down", "note that", "definition", "formula", "the answer is", "we decided", "agreed",
+    "action item", "next steps", "meeting at", "appointment", "phone number", "email me", "address is",
+    "by tomorrow", "by friday", "next week", "tonight"]
 CLIP_KEY_GAP = 20            # at most one key-phrase clip per this many seconds
 OFFLINE_CHECK_SECONDS = 5    # how often the offline queue checks for internet
 ASK_BEFORE_OBSIDIAN = True   # explain vault changes and wait for approval before writing them

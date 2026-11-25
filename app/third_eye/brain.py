@@ -56,7 +56,8 @@ Return ONLY JSON:
  "topic": "short topic, 2-6 words",
  "title": "short name for this session, e.g. 'BIOL 1010: cellular respiration' or 'Team sync with Sam'",
  "tasks": [{{"task": "clear action for the user", "kind": "task|deadline|event", "due": "YYYY-MM-DD HH:MM or YYYY-MM-DD or null"}}],
- "explain": [{{"about": "the question or term", "say": "1-2 short spoken sentences"}}]
+ "explain": [{{"about": "the question or term", "say": "1-2 short spoken sentences"}}],
+ "keep": "true if the NEW text has a moment worth keeping as a clip (key fact, instruction, decision, name or number to remember), else false"
 }}
 Rules:
 - Infer. Resolve relative dates ("next Friday", "in two weeks", "tomorrow at 3") against Now.
@@ -249,6 +250,13 @@ class Brain:
             w.add_task(item["t"], item["task"], item["due"])
         if added:
             self.write_files()
+        keep = r.get("keep") in (True, "true", "True") or bool(added)
+        if keep and not final and getattr(self.app, "device", "") == "LISTEN"                 and time.time() - getattr(self.app, "_last_key_clip", 0) >= config.CLIP_KEY_GAP:
+            try:
+                self.app._last_key_clip = time.time()
+                self.app.save_clip("important moment")
+            except Exception as e:
+                print(f"[brain] couldn't save clip: {e}")
         for x in (r.get("explain") or [])[:1]:
             say = (x.get("say") or "").strip()
             if not say:
