@@ -453,6 +453,12 @@ class App:
         self.quitting = True
         self.indicator.set("OFF")
         try:
+            import webview
+            for w in list(webview.windows):
+                w.destroy()
+        except Exception:
+            pass
+        try:
             if self.source:
                 self.source.stop()
         except Exception:
