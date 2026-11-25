@@ -95,6 +95,21 @@
   .sess-task.done span{text-decoration:line-through;color:var(--muted)}
   .sess-task small{font:11px var(--mono);color:var(--muted);white-space:nowrap}
   .sess-notes{max-height:360px;overflow:auto;font-size:13px}
+
+  .device{margin-top:14px;border:1px solid var(--hairline);padding:10px}
+  .device-head{display:flex;align-items:center;gap:8px;font:600 10px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .device-head b{color:var(--text)} .device-head .st-LISTEN{color:var(--rec)} .device-head .st-PROMPT{color:var(--ask)}
+  .device-head .sp{flex:1}
+  .device-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .device-btns .btn{padding:12px 8px;user-select:none;touch-action:none}
+  .device-btns .btn.held{background:var(--accent-fill);border-color:var(--accent)}
+  .device small{display:block;margin-top:8px;font-size:11px;color:var(--muted)}
+  #approval{position:fixed;right:20px;bottom:20px;width:400px;z-index:25;background:var(--surface-2);border:1px solid var(--accent);padding:16px}
+  #approval h3{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+  #approval ul{margin:8px 0 12px;padding-left:18px;font-size:12px;color:var(--text-2);max-height:180px;overflow:auto}
+  #approval .row{display:flex;gap:8px} #approval .row .btn{flex:1}
+  #vaultFrame{width:100%;height:calc(100vh - 49px);border:0;display:block;background:#000}
+  #obsView.framed{padding:0;max-width:none}
   #keyPanel{position:fixed;top:56px;right:20px;width:380px;z-index:30;background:var(--surface-2);border:1px solid var(--border-ctl);padding:16px}
   #keyPanel h3{margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
   #keyPanel .row{display:flex;gap:8px;margin-top:10px}
@@ -246,6 +261,14 @@
   <button class="btn small" id="keyBtn">AI key</button>
 </header>
 
+<div id="approval" class="hidden" role="dialog" aria-label="Approve changes">
+  <h3>Update Obsidian?</h3>
+  <p class="note" id="apSummary" style="margin:0"></p>
+  <ul id="apChanges"></ul>
+  <div class="row"><button class="btn violet" id="apYes">Yes, make the changes</button><button class="btn" id="apNo">No, discard</button></div>
+  <small class="note">Or press Prompt: tap for yes, hold for no.</small>
+</div>
+
 <div id="keyPanel" class="hidden" role="dialog" aria-label="AI key">
   <h3>AI key</h3>
   <p class="note" style="margin:0">Paste a key to switch on AI answers, summaries and context. Gemini has a free tier
@@ -311,6 +334,17 @@
         <button class="btn tomato" id="endBtn">End session</button>
       </div>
       <div class="statusline" id="status"></div>
+      <div class="device">
+        <div class="device-head"><span>Earpiece</span><b id="devState">LISTEN</b><span class="sp"></span>
+          <span id="devClips">0 clips</span><span id="devNet"></span></div>
+        <div class="device-btns">
+          <button class="btn" id="brainBtn" data-button="brain">Second Brain</button>
+          <button class="btn" id="promptBtn" data-button="prompt">Prompt</button>
+        </div>
+        <small>Tap Second Brain to save the last 30 s, hold it to sleep or wake. Tap Prompt to ask.
+          Keys: B and P (hold for a long press).</small>
+        <small id="devReminders"></small>
+      </div>
       <div class="tasks">
         <span class="fieldname">Tasks</span>
         <div id="taskList"></div>
@@ -376,7 +410,9 @@
   </section>
 </main>
 
-<section id="obsView" class="hidden">
+<section id="obsView" class="hidden framed">
+  <iframe id="vaultFrame" title="Obsidian vault"></iframe>
+  <div class="hidden" id="obsLegacy">
   <div class="obs-bar">
     <span class="fieldname" style="margin:0">Vault</span>
     <span class="path" id="obsPath"></span>
@@ -391,6 +427,7 @@
       <div style="margin-top:10px"><button class="btn small hidden" id="obsOpenNote">Open this note in Obsidian</button></div>
     </div>
   </div>
+</div>
 </section>
 
 <section id="sessView" class="hidden">
@@ -638,6 +675,7 @@ async function poll() {
   $('keyBtn').textContent = S.ai === 'offline' ? 'Add AI key' : 'AI key';
 
   updateCamera();
+  renderDevice();
   const camOpts = cameraOptions(), camCur = S.camera.index === null ? 'off' : S.camera.index;
   fillSelect($('camSelectSetup'), camOpts, camCur); fillSelect($('camSelectLive'), camOpts, camCur);
   $('rescanBtn').disabled = S.camera.scanning;
@@ -718,7 +756,7 @@ function showTab(name) {
     $(tab).classList.toggle('on', key === name);
     $(view).classList.toggle('hidden', key !== name);
   }
-  if (name === 'obsidian') loadVault();
+  if (name === 'obsidian') openVaultView();
   if (name === 'sessions') loadSessions();
   if (name === 'settings') loadSettings();
 }
@@ -882,6 +920,61 @@ $('setRate').oninput = () => $('setRateVal').textContent = rateText();
 $('setRate').onchange = () => saveSetting({voice_rate: rateText()});
 $('setTest').onclick = () => fetch('/api/voice_test', {method: 'POST', headers: {'Content-Type': 'application/json'},
   body: JSON.stringify({voice: $('setVoice').value, rate: rateText()})});
+
+const LONG_PRESS = 600;
+function pressButton(button, press) { post('/api/button', {button, press}); }
+for (const b of [$('brainBtn'), $('promptBtn')]) {
+  let t0 = 0;
+  b.onpointerdown = e => { t0 = Date.now(); b.classList.add('held'); b.setPointerCapture(e.pointerId); };
+  b.onpointerup = () => { if (!t0) return; b.classList.remove('held');
+    pressButton(b.dataset.button, Date.now() - t0 >= LONG_PRESS ? 'long' : 'short'); t0 = 0; };
+  b.onpointercancel = () => { t0 = 0; b.classList.remove('held'); };
+}
+const keyDown = {};
+document.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (!['b', 'p'].includes(k) || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  keyDown[k] = Date.now(); $(k === 'b' ? 'brainBtn' : 'promptBtn').classList.add('held');
+});
+document.addEventListener('keyup', e => {
+  const k = e.key.toLowerCase();
+  if (!keyDown[k]) return;
+  $(k === 'b' ? 'brainBtn' : 'promptBtn').classList.remove('held');
+  pressButton(k === 'b' ? 'brain' : 'prompt', Date.now() - keyDown[k] >= LONG_PRESS ? 'long' : 'short');
+  delete keyDown[k];
+});
+let shownApproval = '';
+function renderDevice() {
+  const d = S.device;
+  if (d) {
+    $('devState').textContent = d.state; $('devState').className = 'st-' + d.state;
+    $('devClips').textContent = `${d.clips} clip${d.clips === 1 ? '' : 's'}`;
+    $('devNet').textContent = d.online === false ? `offline · ${d.queue} queued` : (d.queue ? `${d.queue} queued` : '');
+  }
+  const r = S.reminders || [];
+  $('devReminders').textContent = r.length ? 'Next reminder: ' + r[0].task + ' · ' + r[0].at : '';
+  const a = S.approval;
+  $('approval').classList.toggle('hidden', !a);
+  if (a && a.id !== shownApproval) {
+    shownApproval = a.id;
+    $('apSummary').textContent = a.summary;
+    $('apChanges').innerHTML = '';
+    for (const c of a.changes || []) $('apChanges').appendChild(el('li', null, c));
+  }
+}
+$('apYes').onclick = () => S.approval && post('/api/approve', {id: S.approval.id, yes: true});
+$('apNo').onclick = () => S.approval && post('/api/approve', {id: S.approval.id, yes: false});
+
+async function openVaultView() {
+  let ok = false;
+  try { ok = (await fetch('/vault', {cache: 'no-store'})).ok; } catch (e) {}
+  $('vaultFrame').classList.toggle('hidden', !ok);
+  $('obsLegacy').classList.toggle('hidden', ok);
+  $('obsView').classList.toggle('framed', ok);
+  if (ok) { if (!$('vaultFrame').src) $('vaultFrame').src = '/vault'; }
+  else loadVault();
+}
 
 poll(); setInterval(poll, 400);
 </script>

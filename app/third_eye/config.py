@@ -18,7 +18,8 @@ DASHBOARD_PORT = 8000        # the dashboard opens at http://localhost:8000
 # ---------- Speech to text ----------
 # faster-whisper model sizes: "tiny.en", "base.en", "small.en", "medium.en"
 # tiny/base are fast enough for most laptops on CPU; small is more accurate.
-WHISPER_MODEL = os.environ.get("THIRD_EYE_WHISPER", "base.en")
+WHISPER_MODEL = os.environ.get("THIRD_EYE_WHISPER", "small.en")
+WHISPER_BEAM = 5             # wider search = fewer misheard words (1 is fastest)
 SAMPLE_RATE = 16000          # Whisper expects 16 kHz mono
 CHUNK_SECONDS = 8            # how much lecture audio to transcribe at a time
 QUESTION_SECONDS = 6         # how long push-to-talk listens for your question
@@ -119,6 +120,14 @@ AUTO_SPEAK = True            # say tasks and explanations out loud without being
 AUTO_SPEAK_GAP = 45          # seconds between unprompted remarks
 AUTO_END_MINUTES = 10        # end the session after this much quiet (0 = never)
 AUTO_RESTART_SECONDS = 30    # after an automatic end, start a new session this many seconds later
+
+# ---------- Device (earpiece buttons, clips, offline queue) ----------
+CLIP_SECONDS = 30            # rolling buffer length; saving a clip copies this much audio and video
+CLIP_FPS = 2                 # camera frames kept per second in the buffer
+CLIP_KEY_PHRASES = ["due", "exam", "assignment", "deadline", "quiz", "test"]
+CLIP_KEY_GAP = 20            # at most one key-phrase clip per this many seconds
+OFFLINE_CHECK_SECONDS = 5    # how often the offline queue checks for internet
+ASK_BEFORE_OBSIDIAN = True   # explain vault changes and wait for approval before writing them
 
 # ---------- Voice ----------
 # A calm British neural voice via edge-tts (free, needs internet). Others: en-GB-SoniaNeural,

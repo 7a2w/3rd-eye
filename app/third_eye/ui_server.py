@@ -101,6 +101,8 @@ def serve(app, port: int):
             if path.startswith("/files/"):
                 return self._file_from_lecture(path[7:], download=True)
             if path == "/vault":
+                if not (WEB / "vault.html").exists():
+                    return self.send_error(404)
                 return self._send((WEB / "vault.html").read_bytes(), "text/html; charset=utf-8")
             if path.startswith("/api/vault"):
                 import vault_api

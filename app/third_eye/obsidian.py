@@ -107,12 +107,37 @@ def _due(task):
     return f" 📅 {m.group(0)}" if m else ""
 
 
-def export(writer, sheet, tasks, context=""):
-    """Write the session into the vault. Returns the note path, or None if there is no vault."""
+def _related(base, title, topic, skip):
+    """Existing session notes with the same title or topic."""
+    if not base.is_dir():
+        return []
+    want = _safe(title).lower()
+    found = []
+    for f in base.glob("*.md"):
+        if f.name == "Tasks.md" or f.name == skip:
+            continue
+        name = re.sub(r"^\d{4}-\d{2}-\d{2} \d{4} ", "", f.stem).lower()
+        same_topic = False
+        if topic:
+            try:
+                head = f.read_text(encoding="utf-8")[:600]
+            except OSError:
+                continue
+            same_topic = f'topic: "{topic}"' in head
+        if name == want or same_topic:
+            found.append(f)
+    return sorted(found)
+
+
+def propose(writer, sheet, tasks, context=""):
+    """Work out what export() would change in the vault, without writing anything.
+
+    Returns a change set for apply(): the new note, task lines for Tasks.md, links to add to
+    related notes, and pictures to copy, plus "changes" as short lines to show the user.
+    """
     vault = find_vault()
     base = vault / FOLDER
     att = base / "attachments" / writer.folder.name
-    base.mkdir(parents=True, exist_ok=True)
 
     title = sheet.get("title") or writer.course
     note = base / f"{writer.started.strftime('%Y-%m-%d %H%M')} {_safe(title)}.md"
@@ -136,22 +161,67 @@ def export(writer, sheet, tasks, context=""):
         md += ["## Follow up on"] + [f"- {c}" for c in sheet["confusing_parts"]] + [""]
 
     slides = sorted(writer.folder.glob("slide_*.jpg"))
+    copies = []
     if slides:
-        att.mkdir(parents=True, exist_ok=True)
         md.append("## Pictures")
         for s in slides:
-            shutil.copy2(s, att / s.name)
+            copies.append((str(s), str(att / s.name)))
             md.append(f"![[{FOLDER}/attachments/{writer.folder.name}/{s.name}]]")
         md.append("")
 
+    related = _related(base, title, context, note.name)
+    if related:
+        md += ["## Related"] + [f"- [[{f.stem}]]" for f in related] + [""]
+
     md += ["## Transcript", "", writer.timed_transcript() or "(nothing was transcribed)", ""]
-    note.write_text("\n".join(md), encoding="utf-8")
 
     task_file = base / "Tasks.md"
-    existing = task_file.read_text(encoding="utf-8") if task_file.exists() else "# Third Eye tasks\n\n"
+    existing = task_file.read_text(encoding="utf-8") if task_file.exists() else ""
     link = f"[[{note.stem}]]"
-    new = [f"- [ ] {t['task']}{_due(t)} ({link})" for t in open_tasks if t["task"] not in existing]
+    task_lines = [f"- [ ] {t['task']}{_due(t)} ({link})" for t in open_tasks if t["task"] not in existing]
+
+    changes = [f"New note: {FOLDER}/{note.name}"]
+    changes += [f"Tasks.md: add {line[6:]}" for line in task_lines]
+    changes += [f"Link from {f.name}" for f in related]
+    if copies:
+        changes.append(f"Copy {len(copies)} picture{'s' if len(copies) != 1 else ''} to attachments")
+    return {"title": title, "note": str(note), "text": "\n".join(md), "tasks_file": str(task_file),
+            "task_lines": task_lines, "links": [str(f) for f in related], "copies": copies, "changes": changes}
+
+
+def apply(change):
+    """Make the changes from propose(). Returns the note path."""
+    note = Path(change["note"])
+    note.parent.mkdir(parents=True, exist_ok=True)
+    for src, dst in change["copies"]:
+        Path(dst).parent.mkdir(parents=True, exist_ok=True)
+        if Path(src).exists():
+            shutil.copy2(src, dst)
+    note.write_text(change["text"], encoding="utf-8")
+
+    task_file = Path(change["tasks_file"])
+    existing = task_file.read_text(encoding="utf-8") if task_file.exists() else "# Third Eye tasks\n\n"
+    new = [line for line in change["task_lines"] if line not in existing]
     if new:
         task_file.write_text(existing.rstrip("\n") + "\n" + "\n".join(new) + "\n", encoding="utf-8")
+
+    for path in change["links"]:
+        f = Path(path)
+        if not f.is_file():
+            continue
+        text = f.read_text(encoding="utf-8")
+        line = f"- [[{note.stem}]]"
+        if line in text:
+            continue
+        if "\n## Related\n" in text:
+            text = text.replace("\n## Related\n", f"\n## Related\n{line}\n", 1)
+        else:
+            text = text.rstrip("\n") + f"\n\n## Related\n{line}\n"
+        f.write_text(text, encoding="utf-8")
     print(f"[obsidian] saved to {note}")
     return note
+
+
+def export(writer, sheet, tasks, context=""):
+    """Write the session into the vault straight away. Returns the note path."""
+    return apply(propose(writer, sheet, tasks, context))

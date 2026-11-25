@@ -34,6 +34,7 @@ class _BaseSource:
         self._lock = threading.Lock()
         self.chunk_samples = int(config.CHUNK_SECONDS * config.SAMPLE_RATE)
         self.level = 0.0          # live loudness 0..1, shown as the mic meter in the dashboard
+        self.on_audio = None      # called with every recorded block (feeds the clip buffer)
 
     def _update_level(self, block: np.ndarray):
         rms = float(np.sqrt(np.mean(block ** 2))) if len(block) else 0.0
@@ -46,6 +47,8 @@ class _BaseSource:
     def _add_lecture_audio(self, block: np.ndarray, t: float):
         if self._buf_len == 0:
             self._buf_start = t
+        if self.on_audio is not None:
+            self.on_audio(block)
         self._buf.append(block)
         self._buf_len += len(block)
         if self._buf_len >= self.chunk_samples:

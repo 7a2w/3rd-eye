@@ -1,0 +1,1155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vault</title>
+<style>
+:root{
+  --bg:#000;--bg1:#070707;--bg2:#0d0d0d;--bg3:#151515;
+  --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+  --text:#e4e4e4;--muted:#8b8b8b;--faint:#5a5a5a;
+  --accent:#a48ae4;--accent-dim:rgba(164,138,228,.16);--accent-line:rgba(164,138,228,.45);
+  --sans:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",Consolas,"Cascadia Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;border-radius:0}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.5 var(--sans);overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+input,textarea{font:inherit;color:inherit}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}::-webkit-scrollbar-track{background:transparent}
+
+#app{display:grid;grid-template-columns:44px var(--lw,260px) 1fr var(--rw,260px);grid-template-rows:1fr 24px;height:100%}
+#app.noleft{--lw:0px}#app.noright{--rw:0px}
+#ribbon{grid-row:1/3;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:4px;background:var(--bg1)}
+#ribbon button{width:32px;height:32px;display:grid;place-items:center;color:var(--muted)}
+#ribbon button:hover{color:var(--text);background:var(--bg3)}
+#ribbon button.on{color:var(--accent)}
+#ribbon .sp{flex:1}
+
+.side{border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0;overflow:hidden;background:var(--bg1)}
+#right{border-right:0;border-left:1px solid var(--line)}
+.side-head{height:38px;display:flex;align-items:center;gap:4px;padding:0 8px;border-bottom:1px solid var(--line);flex:none}
+.side-head .t{flex:1;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-left:4px}
+.side-head button{width:26px;height:26px;display:grid;place-items:center;color:var(--muted)}
+.side-head button:hover{color:var(--text);background:var(--bg3)}
+.pane{flex:1;overflow:auto;padding:6px 0}
+.vaultname{padding:8px 14px 6px;font-weight:600;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.tree-row{display:flex;align-items:center;gap:4px;height:26px;padding-right:8px;cursor:pointer;white-space:nowrap;color:#bdbdbd;user-select:none}
+.tree-row:hover{background:var(--bg3);color:var(--text)}
+.tree-row.active{background:var(--accent-dim);color:#fff;box-shadow:inset 2px 0 var(--accent)}
+.tree-row .chev{width:12px;height:12px;transition:transform .12s;color:var(--faint)}
+.tree-row.open .chev{transform:rotate(90deg)}
+.tree-row .nm{overflow:hidden;text-overflow:ellipsis}
+.tree-row .ext{font:10px var(--mono);color:var(--faint);border:1px solid var(--line);padding:0 3px;margin-left:auto}
+.tree-kids{position:relative}
+.tree-kids::before{content:"";position:absolute;top:0;bottom:0;left:var(--gx);border-left:1px solid var(--line)}
+
+#searchbox{margin:8px 10px;display:flex;align-items:center;gap:6px;border:1px solid var(--line2);padding:0 8px;height:30px;background:var(--bg)}
+#searchbox:focus-within{border-color:var(--accent-line)}
+#searchbox input{flex:1;background:none;border:0;outline:0;height:28px}
+.sr-file{padding:6px 14px 2px;font-weight:600;font-size:12px;cursor:pointer;display:flex;gap:6px}
+.sr-file span{color:var(--faint);font-weight:400;margin-left:auto}
+.sr-hit{padding:3px 14px 3px 24px;color:var(--muted);font-size:12px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-hit:hover,.sr-file:hover{background:var(--bg3);color:var(--text)}
+mark{background:rgba(164,138,228,.3);color:#fff}
+.empty{padding:14px;color:var(--faint);font-size:12px}
+
+#main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+#tabs{height:38px;display:flex;align-items:stretch;border-bottom:1px solid var(--line);background:var(--bg1);overflow-x:auto;overflow-y:hidden;flex:none}
+#tabs::-webkit-scrollbar{height:0}
+.tab{display:flex;align-items:center;gap:6px;padding:0 6px 0 12px;min-width:110px;max-width:200px;border-right:1px solid var(--line);color:var(--muted);cursor:pointer;position:relative}
+.tab:hover{color:var(--text);background:var(--bg2)}
+.tab.on{background:var(--bg);color:var(--text)}
+.tab.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--bg)}
+.tab.on::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--accent)}
+.tab .tt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tab .dot{width:6px;height:6px;background:var(--accent);display:none}
+.tab.dirty .dot{display:block}
+.tab .x{width:20px;height:20px;display:grid;place-items:center;opacity:0}
+.tab:hover .x,.tab.on .x{opacity:.7}.tab .x:hover{opacity:1;background:var(--bg3)}
+.tab .x svg{width:12px;height:12px}
+#newtab{width:34px;display:grid;place-items:center;color:var(--muted);flex:none}
+#newtab:hover{color:var(--text)}
+
+#viewhead{height:38px;display:flex;align-items:center;gap:4px;padding:0 10px;border-bottom:1px solid var(--line);flex:none}
+#crumbs{flex:1;display:flex;align-items:center;gap:4px;color:var(--muted);font-size:12px;overflow:hidden;white-space:nowrap}
+#crumbs b{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis}
+#crumbs i{font-style:normal;color:var(--faint)}
+#viewhead button{height:26px;min-width:26px;display:flex;align-items:center;justify-content:center;gap:6px;color:var(--muted);padding:0 6px}
+#viewhead button:hover{color:var(--text);background:var(--bg3)}
+#viewhead button.txt{font-size:12px;border:1px solid var(--line);padding:0 8px}
+#viewhead button.txt:hover{border-color:var(--accent-line);color:var(--accent)}
+
+#view{flex:1;overflow:auto;position:relative}
+.doc{max-width:760px;margin:0 auto;padding:28px 40px 120px}
+.inline-title{display:block;width:100%;background:none;border:0;outline:0;font:700 30px/1.25 var(--sans);letter-spacing:-.01em;margin:0 0 18px;padding:0;color:#f2f2f2}
+.inline-title:focus{box-shadow:inset 0 -1px var(--accent-line)}
+textarea#editor{display:block;width:100%;min-height:calc(100vh - 220px);background:none;border:0;outline:0;resize:none;font:13.5px/1.7 var(--mono);color:#dcdcdc;tab-size:4;padding:0;caret-color:var(--accent)}
+#graphwrap{position:absolute;inset:0}
+#graph{display:block;width:100%;height:100%;cursor:grab}
+#graphinfo{position:absolute;left:12px;bottom:10px;color:var(--faint);font:11px var(--mono)}
+
+.md{font-size:15px;line-height:1.7;color:#d8d8d8;word-wrap:break-word}
+.md h1,.md h2,.md h3,.md h4,.md h5,.md h6{color:#f2f2f2;line-height:1.3;margin:1.4em 0 .5em;font-weight:650}
+.md h1{font-size:1.7em}.md h2{font-size:1.4em}.md h3{font-size:1.2em}.md h4{font-size:1.05em}.md h5,.md h6{font-size:.95em;color:var(--muted)}
+.md>:first-child{margin-top:0}
+.md p{margin:0 0 .9em}
+.md a{color:var(--accent);text-decoration:none;cursor:pointer}
+.md a:hover{text-decoration:underline}
+.md a.wl.unres{color:#7d6ab0;opacity:.75}
+.md code{font:.86em var(--mono);background:var(--bg3);border:1px solid var(--line);padding:.05em .35em;color:#e0d6ff}
+.md pre{background:var(--bg2);border:1px solid var(--line);padding:12px 14px;overflow:auto;margin:0 0 1em;position:relative}
+.md pre code{background:none;border:0;padding:0;color:#d6d6d6;font-size:12.5px;line-height:1.6}
+.md pre .lang{position:absolute;top:4px;right:8px;font:10px var(--mono);color:var(--faint)}
+.md blockquote{margin:0 0 1em;padding:2px 0 2px 16px;border-left:2px solid var(--accent);color:#bdbdbd}
+.md .callout{border:1px solid var(--accent-line);background:var(--accent-dim);padding:10px 14px;margin:0 0 1em}
+.md .callout-t{font-weight:600;color:var(--accent);margin-bottom:4px;text-transform:capitalize}
+.md ul,.md ol{margin:0 0 .9em;padding-left:1.6em}
+.md li{margin:.15em 0}
+.md li>ul,.md li>ol{margin:.1em 0}
+.md ul{list-style:none}
+.md ul>li{position:relative}
+.md ul>li::before{content:"";position:absolute;left:-1em;top:.7em;width:5px;height:5px;background:var(--faint)}
+.md ul>li.task::before{display:none}
+.md li.task{margin-left:-1.4em;display:block}
+.md li li.task{margin-left:0}
+.md li.task>input{appearance:none;width:15px;height:15px;border:1px solid var(--line2);vertical-align:-2px;margin:0 8px 0 0;cursor:pointer;position:relative;background:var(--bg)}
+.md li.task>input:hover{border-color:var(--accent)}
+.md li.task>input:checked{background:var(--accent);border-color:var(--accent)}
+.md li.task>input:checked::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #000;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.md li.task.done>.lt{color:var(--faint);text-decoration:line-through}
+.md hr{border:0;border-top:1px solid var(--line2);margin:1.6em 0}
+.md img{max-width:100%;display:block;margin:.4em 0;border:1px solid var(--line)}
+.md .embed-missing{color:var(--faint);font:12px var(--mono);border:1px dashed var(--line2);padding:6px 10px;display:inline-block}
+.md .embed-note{border-left:2px solid var(--accent-line);padding:4px 0 4px 14px;margin:0 0 1em}
+.md table{border-collapse:collapse;margin:0 0 1em;font-size:14px}
+.md th,.md td{border:1px solid var(--line2);padding:5px 10px;text-align:left}
+.md th{background:var(--bg2);color:#f0f0f0}
+.md del{color:var(--muted)}
+.md .hl{background:rgba(164,138,228,.28);color:#fff}
+.tag{display:inline-block;font-size:.82em;line-height:1.5;padding:0 7px;border:1px solid var(--accent-line);background:var(--accent-dim);color:var(--accent);cursor:pointer;text-decoration:none;margin:0 1px}
+.tag:hover{background:rgba(164,138,228,.28)}
+.props{border:1px solid var(--line);margin:0 0 22px;font-size:13px}
+.props-h{padding:6px 12px;border-bottom:1px solid var(--line);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.prop{display:grid;grid-template-columns:140px 1fr;border-bottom:1px solid var(--line)}
+.prop:last-child{border-bottom:0}
+.prop>div{padding:5px 12px}
+.prop .k{color:var(--muted);font-family:var(--mono);font-size:12px;border-right:1px solid var(--line)}
+.prop .v{color:var(--text)}
+
+.rsec{border-bottom:1px solid var(--line)}
+.rsec-h{display:flex;align-items:center;gap:6px;padding:10px 12px 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rsec-h span{margin-left:auto;font-family:var(--mono);letter-spacing:0;color:var(--faint)}
+.bl{padding:5px 12px 7px;cursor:pointer}
+.bl:hover{background:var(--bg3)}
+.bl b{display:block;font-weight:500;font-size:12px;color:var(--text)}
+.bl small{display:block;color:var(--muted);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ol{padding:3px 12px;cursor:pointer;color:#bdbdbd;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ol:hover{background:var(--bg3);color:var(--text)}
+
+#status{grid-column:2/5;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:flex-end;gap:16px;padding:0 12px;font:11px var(--mono);color:var(--faint);background:var(--bg1)}
+#savestate.ok{color:var(--accent)}#savestate.err{color:#e07a7a}
+
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;padding-top:12vh;z-index:10}
+#modal.on{display:flex}
+.qs{width:min(560px,92vw);background:var(--bg1);border:1px solid var(--line2);box-shadow:0 20px 60px rgba(0,0,0,.8)}
+.qs input{width:100%;background:none;border:0;border-bottom:1px solid var(--line);outline:0;padding:14px 16px;font-size:15px}
+.qs-list{max-height:50vh;overflow:auto}
+.qs-item{padding:7px 16px;cursor:pointer;display:flex;gap:10px;align-items:baseline}
+.qs-item.on{background:var(--accent-dim);box-shadow:inset 2px 0 var(--accent)}
+.qs-item b{font-weight:500}
+.qs-item small{color:var(--faint);font-size:11.5px;margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50%}
+.qs-foot{border-top:1px solid var(--line);padding:6px 16px;color:var(--faint);font:11px var(--mono);display:flex;gap:16px}
+#toast{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--line2);padding:7px 14px;font-size:12px;display:none;z-index:20}
+
+@media (max-width:900px){#app{--rw:0px}#app.showright{--rw:240px}}
+@media (max-width:640px){#app{--lw:0px}#app.showleft{--lw:220px}.doc{padding:20px 16px 100px}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-files" viewBox="0 0 24 24"><path d="M3 5h6l2 2h10v12H3z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+  <symbol id="i-graph" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="10" cy="18" r="2.5"/><path d="M8.4 6.4l7.2 1.2M7 8.3l2.2 7.4M16.6 10l-5 6"/></symbol>
+  <symbol id="i-new" viewBox="0 0 24 24"><path d="M14 3H5v18h14V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/></symbol>
+  <symbol id="i-switch" viewBox="0 0 24 24"><path d="M4 7h13l-3-3M20 17H7l3 3"/></symbol>
+  <symbol id="i-folder-new" viewBox="0 0 24 24"><path d="M3 5h6l2 2h10v12H3z"/><path d="M12 10v6M9 13h6"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2zM22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 3h7v7M21 3l-9 9M19 14v7H3V5h7"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/></symbol>
+  <symbol id="i-panel-l" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16"/><path d="M9 4v16"/></symbol>
+  <symbol id="i-panel-r" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16"/><path d="M15 4v16"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+  <symbol id="i-collapse" viewBox="0 0 24 24"><path d="M7 9l5-5 5 5M7 15l5 5 5-5"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+</svg>
+
+<div id="app">
+  <nav id="ribbon">
+    <button id="rb-files" class="on" title="File explorer"><svg class="i"><use href="#i-files"/></svg></button>
+    <button id="rb-search" title="Search (Ctrl+Shift+F)"><svg class="i"><use href="#i-search"/></svg></button>
+    <button id="rb-graph" title="Graph view (Ctrl+G)"><svg class="i"><use href="#i-graph"/></svg></button>
+    <button id="rb-switch" title="Quick switcher (Ctrl+O)"><svg class="i"><use href="#i-switch"/></svg></button>
+    <button id="rb-new" title="New note (Ctrl+N)"><svg class="i"><use href="#i-new"/></svg></button>
+    <div class="sp"></div>
+    <button id="rb-left" title="Toggle left sidebar"><svg class="i"><use href="#i-panel-l"/></svg></button>
+    <button id="rb-right" title="Toggle right sidebar"><svg class="i"><use href="#i-panel-r"/></svg></button>
+  </nav>
+
+  <aside id="left" class="side">
+    <div id="p-files" style="display:flex;flex-direction:column;min-height:0;flex:1">
+      <div class="side-head">
+        <span class="t">Files</span>
+        <button id="fl-new" title="New note"><svg class="i"><use href="#i-new"/></svg></button>
+        <button id="fl-folder" title="New folder"><svg class="i"><use href="#i-folder-new"/></svg></button>
+        <button id="fl-collapse" title="Collapse all"><svg class="i"><use href="#i-collapse"/></svg></button>
+        <button id="fl-refresh" title="Reload"><svg class="i"><use href="#i-refresh"/></svg></button>
+      </div>
+      <div class="vaultname" id="vaultname"></div>
+      <div class="pane" id="tree"></div>
+    </div>
+    <div id="p-search" style="display:none;flex-direction:column;min-height:0;flex:1">
+      <div class="side-head"><span class="t">Search</span></div>
+      <label id="searchbox"><svg class="i"><use href="#i-search"/></svg><input id="q" placeholder="Search vault" autocomplete="off" spellcheck="false"></label>
+      <div class="pane" id="results"></div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div id="tabs"></div>
+    <div id="viewhead">
+      <div id="crumbs"></div>
+      <button id="vh-mode" title="Toggle reading / editing (Ctrl+E)"><svg class="i"><use href="#i-edit"/></svg></button>
+      <button id="vh-delete" title="Move to trash"><svg class="i"><use href="#i-trash"/></svg></button>
+      <button id="vh-open" class="txt" title="Open this note in the Obsidian app"><svg class="i"><use href="#i-ext"/></svg>Open in Obsidian</button>
+    </div>
+    <div id="view"></div>
+  </main>
+
+  <aside id="right" class="side">
+    <div class="pane" style="padding:0">
+      <div class="rsec"><div class="rsec-h"><svg class="i"><use href="#i-link"/></svg>Backlinks<span id="blcount"></span></div><div id="backlinks"></div></div>
+      <div class="rsec" style="border-bottom:0"><div class="rsec-h"><svg class="i"><use href="#i-list"/></svg>Outline</div><div id="outline"></div></div>
+    </div>
+  </aside>
+
+  <footer id="status"><span id="wc"></span><span id="savestate"></span></footer>
+</div>
+
+<div id="modal"><div class="qs"><input id="qs-in" placeholder="Find or create a note..." autocomplete="off" spellcheck="false"><div class="qs-list" id="qs-list"></div><div class="qs-foot"><span>Up/Down to navigate</span><span>Enter to open</span><span>Shift+Enter to create</span><span>Esc to dismiss</span></div></div></div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const icon = n => `<svg class="i"><use href="#i-${n}"/></svg>`;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("vault." + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("vault." + k, JSON.stringify(v)); } catch (e) {} }
+};
+
+const S = {tree: [], files: [], stems: new Map(), tabs: [], active: -1, openFolders: new Set(store.get("open", [])), vault: ""};
+
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  if (!r.ok) {
+    let msg = r.status + "";
+    try { msg = (await r.json()).error || msg; } catch (e) {}
+    const err = new Error(msg); err.status = r.status; throw err;
+  }
+  return (r.headers.get("content-type") || "").includes("json") ? r.json() : r.text();
+}
+const fileUrl = p => "/api/vault/file?path=" + encodeURIComponent(p);
+const isMd = p => /\.md$/i.test(p);
+const baseName = p => p.split("/").pop().replace(/\.md$/i, "");
+const dirOf = p => p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "";
+
+let toastT;
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.style.display = "block";
+  clearTimeout(toastT); toastT = setTimeout(() => t.style.display = "none", 2200);
+}
+
+/* ---------- tree ---------- */
+async function loadTree() {
+  const d = await api("/api/vault/tree");
+  S.tree = d.tree; S.vault = d.vault;
+  $("#vaultname").textContent = d.vault;
+  document.title = d.vault + " - Vault";
+  S.files = []; S.stems = new Map();
+  (function walk(items) {
+    for (const it of items) {
+      if (it.type === "folder") walk(it.children);
+      else {
+        S.files.push(it);
+        if (isMd(it.path)) {
+          const k = baseName(it.path).toLowerCase();
+          const prev = S.stems.get(k);
+          if (!prev || prev.split("/").length > it.path.split("/").length) S.stems.set(k, it.path);
+        }
+      }
+    }
+  })(S.tree);
+  renderTree();
+}
+
+function renderTree() {
+  const cur = curTab() && curTab().path;
+  const rows = [];
+  (function walk(items, depth) {
+    for (const it of items) {
+      const pad = 10 + depth * 16;
+      if (it.type === "folder") {
+        const open = S.openFolders.has(it.path);
+        rows.push(`<div class="tree-row${open ? " open" : ""}" data-folder="${esc(it.path)}" style="padding-left:${pad}px"><svg class="i chev"><use href="#i-chev"/></svg><span class="nm">${esc(it.name)}</span></div>`);
+        if (open) {
+          rows.push(`<div class="tree-kids" style="--gx:${pad + 5}px">`);
+          walk(it.children, depth + 1);
+          rows.push(`</div>`);
+        }
+      } else {
+        const md = isMd(it.path);
+        const name = md ? it.name.slice(0, -3) : it.name;
+        const ext = md ? "" : `<span class="ext">${esc(it.name.split(".").pop())}</span>`;
+        rows.push(`<div class="tree-row${it.path === cur ? " active" : ""}" data-file="${esc(it.path)}" style="padding-left:${pad + 16}px" draggable="false"><span class="nm">${esc(name)}</span>${ext}</div>`);
+      }
+    }
+  })(S.tree, 0);
+  $("#tree").innerHTML = rows.join("") || `<div class="empty">Empty vault</div>`;
+}
+
+$("#tree").addEventListener("click", e => {
+  const r = e.target.closest(".tree-row"); if (!r) return;
+  if (r.dataset.folder != null) {
+    const f = r.dataset.folder;
+    S.openFolders.has(f) ? S.openFolders.delete(f) : S.openFolders.add(f);
+    store.set("open", [...S.openFolders]); renderTree();
+  } else openFile(r.dataset.file, {newTab: e.ctrlKey || e.metaKey || e.button === 1});
+});
+$("#tree").addEventListener("auxclick", e => {
+  const r = e.target.closest(".tree-row[data-file]"); if (r && e.button === 1) openFile(r.dataset.file, {newTab: true});
+});
+$("#tree").addEventListener("contextmenu", e => {
+  const r = e.target.closest(".tree-row[data-file]"); if (!r) return;
+  e.preventDefault();
+  const p = r.dataset.file;
+  const to = prompt("Rename / move to (vault path). Leave empty and confirm below to delete.", p.replace(/\.md$/i, ""));
+  if (to === null) return;
+  if (to.trim() === "") { trashFile(p); return; }
+  renameFile(p, to.trim());
+});
+$("#fl-new").onclick = () => newNote();
+$("#fl-refresh").onclick = () => loadTree();
+$("#fl-collapse").onclick = () => { S.openFolders.clear(); store.set("open", []); renderTree(); };
+$("#fl-folder").onclick = async () => {
+  const name = prompt("New folder path"); if (!name) return;
+  const p = name.replace(/\/+$/, "") + "/Untitled.md";
+  try { await api("/api/vault/new", {path: p}); revealFolders(p); await loadTree(); openFile(p, {mode: "edit"}); }
+  catch (e) { toast("Could not create: " + e.message); }
+};
+
+function revealFolders(p) {
+  const parts = p.split("/"); parts.pop();
+  let acc = "";
+  for (const part of parts) { acc = acc ? acc + "/" + part : part; S.openFolders.add(acc); }
+  store.set("open", [...S.openFolders]);
+}
+
+/* ---------- tabs ---------- */
+const curTab = () => S.tabs[S.active];
+
+function renderTabs() {
+  $("#tabs").innerHTML = S.tabs.map((t, i) => {
+    const title = t.kind === "graph" ? "Graph view" : baseName(t.path);
+    return `<div class="tab${i === S.active ? " on" : ""}${t.dirty ? " dirty" : ""}" data-i="${i}" title="${esc(t.path || "Graph view")}"><span class="tt">${esc(title)}</span><span class="dot"></span><button class="x" data-close="${i}" title="Close">${icon("x")}</button></div>`;
+  }).join("") + `<button id="newtab" title="New note">${icon("plus")}</button>`;
+  $("#newtab").onclick = () => newNote();
+}
+$("#tabs").addEventListener("click", e => {
+  const c = e.target.closest("[data-close]");
+  if (c) { e.stopPropagation(); closeTab(+c.dataset.close); return; }
+  const t = e.target.closest(".tab"); if (t) activate(+t.dataset.i);
+});
+$("#tabs").addEventListener("auxclick", e => { const t = e.target.closest(".tab"); if (t && e.button === 1) closeTab(+t.dataset.i); });
+
+async function closeTab(i) {
+  const t = S.tabs[i]; if (!t) return;
+  if (t.dirty) await saveTab(t);
+  S.tabs.splice(i, 1);
+  if (S.active >= S.tabs.length) S.active = S.tabs.length - 1;
+  else if (i < S.active) S.active--;
+  persistTabs();
+  render();
+}
+
+function persistTabs() { store.set("tabs", {paths: S.tabs.filter(t => t.path).map(t => t.path), active: curTab() && curTab().path}); }
+
+async function activate(i) {
+  const prev = curTab();
+  if (prev && prev.dirty && S.active !== i) saveTab(prev);
+  if (prev && prev !== S.tabs[i]) prev.scroll = $("#view").scrollTop;
+  S.active = i;
+  const t = curTab();
+  if (t && t.path) { const r = store.get("recent", []).filter(p => p !== t.path); r.unshift(t.path); store.set("recent", r.slice(0, 30)); }
+  persistTabs();
+  render();
+}
+
+async function openFile(path, opt = {}) {
+  if (!path) return;
+  let i = S.tabs.findIndex(t => t.path === path);
+  if (i < 0) {
+    const t = {path, kind: isMd(path) ? "note" : "image", text: "", mode: opt.mode || "read", dirty: false, scroll: 0};
+    if (t.kind === "note") {
+      try { t.text = await api(fileUrl(path)); }
+      catch (e) { toast("Cannot open " + path + ": " + e.message); return; }
+    }
+    const cur = curTab();
+    if (opt.newTab || !cur || cur.dirty || cur.kind === "graph") { S.tabs.splice(S.active + 1, 0, t); i = S.active + 1; }
+    else { S.tabs[S.active] = t; i = S.active; }
+  } else if (opt.mode) S.tabs[i].mode = opt.mode;
+  revealFolders(path);
+  await activate(i);
+  if (opt.line) setTimeout(() => gotoLine(opt.line), 30);
+}
+
+function gotoLine(line) {
+  const t = curTab(); if (!t) return;
+  if (t.mode === "edit") {
+    const ed = $("#editor"); if (!ed) return;
+    const lines = t.text.split("\n");
+    const pos = lines.slice(0, line - 1).join("\n").length + (line > 1 ? 1 : 0);
+    ed.focus(); ed.setSelectionRange(pos, pos + (lines[line - 1] || "").length);
+    const lh = parseFloat(getComputedStyle(ed).lineHeight) || 22;
+    $("#view").scrollTop = Math.max(0, ed.offsetTop + (line - 4) * lh);
+    return;
+  }
+  let best = null;
+  for (const el of document.querySelectorAll("#view [data-line]")) {
+    if (+el.dataset.line <= line) best = el; else break;
+  }
+  if (best) {
+    best.scrollIntoView({block: "center"});
+    best.animate([{background: "rgba(164,138,228,.25)"}, {background: "transparent"}], {duration: 1200});
+  }
+}
+
+/* ---------- render main ---------- */
+function render() {
+  renderTabs();
+  const t = curTab();
+  const view = $("#view");
+  stopGraph();
+  $("#ribbon #rb-graph").classList.toggle("on", !!t && t.kind === "graph");
+  if (!t) {
+    $("#crumbs").innerHTML = "";
+    view.innerHTML = `<div class="doc"><div class="empty" style="padding:60px 0;text-align:center">No file is open.<br><br>Ctrl+O to open a note, Ctrl+N to create one.</div></div>`;
+    $("#backlinks").innerHTML = ""; $("#outline").innerHTML = ""; $("#blcount").textContent = ""; $("#wc").textContent = "";
+    renderTree(); return;
+  }
+  const parts = (t.path || "Graph view").split("/");
+  $("#crumbs").innerHTML = parts.map((p, i) => i === parts.length - 1 ? `<b>${esc(t.kind === "note" ? p.replace(/\.md$/i, "") : p)}</b>` : `<span>${esc(p)}</span><i>/</i>`).join("");
+  const note = t.kind === "note";
+  $("#vh-mode").style.display = note ? "" : "none";
+  $("#vh-delete").style.display = t.kind === "graph" ? "none" : "";
+  $("#vh-open").style.display = t.kind === "graph" ? "none" : "";
+  $("#vh-mode").innerHTML = icon(t.mode === "edit" ? "book" : "edit");
+  $("#vh-mode").title = t.mode === "edit" ? "Reading view (Ctrl+E)" : "Editing view (Ctrl+E)";
+
+  if (t.kind === "graph") {
+    view.innerHTML = `<div id="graphwrap"><canvas id="graph"></canvas><div id="graphinfo"></div></div>`;
+    startGraph(); renderSide(); renderTree(); wordCount(); return;
+  }
+  if (t.kind === "image") {
+    view.innerHTML = `<div class="doc"><img src="${fileUrl(t.path)}" style="max-width:100%;border:1px solid var(--line)" alt="${esc(t.path)}"></div>`;
+    renderSide(); renderTree(); return;
+  }
+  const title = `<input class="inline-title" id="ititle" value="${esc(baseName(t.path))}" spellcheck="false">`;
+  if (t.mode === "edit") {
+    view.innerHTML = `<div class="doc">${title}<textarea id="editor" spellcheck="false"></textarea></div>`;
+    const ed = $("#editor");
+    ed.value = t.text;
+    autoGrow(ed);
+    ed.addEventListener("input", () => { t.text = ed.value; markDirty(t); autoGrow(ed); renderOutline(); wordCount(); });
+    ed.addEventListener("keydown", e => {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const s = ed.selectionStart, en = ed.selectionEnd;
+        ed.setRangeText("\t", s, en, "end"); ed.dispatchEvent(new Event("input"));
+      }
+    });
+  } else {
+    view.innerHTML = `<div class="doc">${title}<div class="md" id="md">${renderMd(t.text, t.path)}</div></div>`;
+    hydrate(t);
+  }
+  $("#ititle").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); } if (e.key === "Escape") { e.target.value = baseName(t.path); e.target.blur(); } });
+  $("#ititle").addEventListener("blur", e => {
+    const v = e.target.value.trim().replace(/[\\/:*?"<>|#^[\]]/g, "");
+    if (v && v !== baseName(t.path)) renameFile(t.path, (dirOf(t.path) ? dirOf(t.path) + "/" : "") + v);
+    else e.target.value = baseName(t.path);
+  });
+  view.scrollTop = t.scroll || 0;
+  renderSide(); renderTree(); wordCount();
+}
+
+function autoGrow(ed) { ed.style.height = "auto"; ed.style.height = Math.max(ed.scrollHeight, 300) + "px"; }
+
+function wordCount() {
+  const t = curTab();
+  if (!t || t.kind !== "note") { $("#wc").textContent = ""; return; }
+  const body = t.text.replace(/^---\n[\s\S]*?\n---\n?/, "");
+  const w = (body.match(/\S+/g) || []).length;
+  $("#wc").textContent = `${w} word${w === 1 ? "" : "s"}  ${body.length} characters`;
+}
+
+/* ---------- saving ---------- */
+let saveTimer = null;
+function setSave(txt, cls) { const s = $("#savestate"); s.textContent = txt; s.className = cls || ""; }
+function markDirty(t) {
+  if (!t.dirty) { t.dirty = true; renderTabs(); }
+  setSave("Unsaved");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveTab(t), 1000);
+}
+async function saveTab(t) {
+  if (!t || t.kind !== "note") return;
+  clearTimeout(saveTimer);
+  const text = t.text;
+  t.saving = true;
+  setSave("Saving...");
+  try {
+    await api("/api/vault/save", {path: t.path, text});
+    if (t.text === text) t.dirty = false;
+    setSave("Saved", "ok");
+    renderTabs();
+  } catch (e) { setSave("Save failed: " + e.message, "err"); }
+  t.saving = false;
+}
+
+/* ---------- side panels ---------- */
+async function renderSide() {
+  renderOutline();
+  const t = curTab();
+  const bl = $("#backlinks");
+  if (!t || t.kind === "graph") { bl.innerHTML = ""; $("#blcount").textContent = ""; return; }
+  const path = t.path;
+  try {
+    const rows = await api("/api/vault/backlinks?path=" + encodeURIComponent(path));
+    if (!curTab() || curTab().path !== path) return;
+    $("#blcount").textContent = rows.length;
+    const by = new Map();
+    for (const r of rows) { if (!by.has(r.path)) by.set(r.path, []); by.get(r.path).push(r); }
+    bl.innerHTML = rows.length ? [...by].map(([p, rs]) => rs.map((r, i) => `<div class="bl" data-path="${esc(p)}" data-line="${r.line}">${i ? "" : `<b>${esc(baseName(p))}</b>`}<small>${esc(r.text)}</small></div>`).join("")).join("") : `<div class="empty">No backlinks found.</div>`;
+  } catch (e) { bl.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+$("#backlinks").addEventListener("click", e => { const b = e.target.closest(".bl"); if (b) openFile(b.dataset.path, {line: +b.dataset.line}); });
+
+function headings(text) {
+  const out = []; let fence = false;
+  const lines = text.split("\n");
+  lines.forEach((l, i) => {
+    if (/^\s*(```|~~~)/.test(l)) fence = !fence;
+    else if (!fence) { const m = l.match(/^(#{1,6})\s+(.+?)\s*#*\s*$/); if (m) out.push({level: m[1].length, text: m[2], line: i + 1}); }
+  });
+  return out;
+}
+function renderOutline() {
+  const t = curTab();
+  if (!t || t.kind !== "note") { $("#outline").innerHTML = ""; return; }
+  const hs = headings(t.text);
+  const min = Math.min(...hs.map(h => h.level), 6);
+  $("#outline").innerHTML = hs.length ? hs.map(h => `<div class="ol" data-line="${h.line}" style="padding-left:${12 + (h.level - min) * 14}px">${esc(h.text.replace(/[*_`=]|\[\[|\]\]/g, ""))}</div>`).join("") : `<div class="empty">No headings.</div>`;
+}
+$("#outline").addEventListener("click", e => { const o = e.target.closest(".ol"); if (o) gotoLine(+o.dataset.line); });
+
+/* ---------- markdown ---------- */
+function parseFront(text) {
+  const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---[ \t]*(\r?\n|$)/);
+  if (!m) return {props: null, body: text, offset: 0};
+  const props = []; let last = null;
+  for (const line of m[1].split(/\r?\n/)) {
+    const li = line.match(/^\s+-\s+(.*)$/);
+    if (li && last) { if (!Array.isArray(last.v)) last.v = last.v ? [last.v] : []; last.v.push(unq(li[1])); continue; }
+    const kv = line.match(/^([^:#\s][^:]*):\s*(.*)$/);
+    if (kv) {
+      let v = kv[2].trim();
+      if (/^\[.*\]$/.test(v)) v = v.slice(1, -1).split(",").map(s => unq(s.trim())).filter(Boolean);
+      else v = unq(v);
+      last = {k: kv[1].trim(), v}; props.push(last);
+    }
+  }
+  return {props, body: text.slice(m[0].length), offset: m[0].split("\n").length - 1};
+}
+function unq(s) { return s.replace(/^(["'])(.*)\1$/, "$2"); }
+
+function renderProps(props) {
+  if (!props || !props.length) return "";
+  const val = (k, v) => {
+    const arr = Array.isArray(v) ? v : [v];
+    if (/^(tags?|aliases)$/i.test(k)) return arr.map(x => /^tags?$/i.test(k) ? `<span class="tag" data-tag="${esc(String(x).replace(/^#/, ""))}">#${esc(String(x).replace(/^#/, ""))}</span>` : `<span class="tag">${esc(x)}</span>`).join(" ");
+    return arr.map(x => inline(String(x))).join(", ");
+  };
+  return `<div class="props"><div class="props-h">Properties</div>${props.map(p => `<div class="prop"><div class="k">${esc(p.k)}</div><div class="v">${val(p.k, p.v)}</div></div>`).join("")}</div>`;
+}
+
+let renderBase = "";
+function inline(s) {
+  const keep = [];
+  const K = h => "\u0000" + (keep.push(h) - 1) + "\u0000";
+  s = s.replace(/(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/g, (m, f, c) => K(`<code>${esc(c.trim())}</code>`));
+  s = s.replace(/!\[\[([^\]]+)\]\]/g, (m, t) => K(embed(t)));
+  s = s.replace(/!\[([^\]]*)\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/g, (m, a, u) => K(imgTag(u, a)));
+  s = s.replace(/\[\[([^\]]+)\]\]/g, (m, t) => K(wiki(t)));
+  s = s.replace(/\[([^\]]+)\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/g, (m, t, u) => K(linkTag(u, t)));
+  s = s.replace(/<(https?:\/\/[^>\s]+)>|\bhttps?:\/\/[^\s<>)\]]+/g, (m, a) => { const u = a || m; return K(`<a class="ext" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u)}</a>`); });
+  s = esc(s);
+  s = s.replace(/\*\*\*(?=\S)([\s\S]*?\S)\*\*\*/g, "<strong><em>$1</em></strong>")
+       .replace(/\*\*(?=\S)([\s\S]*?\S)\*\*/g, "<strong>$1</strong>")
+       .replace(/(^|[^\w])__(?=\S)([\s\S]*?\S)__(?!\w)/g, "$1<strong>$2</strong>")
+       .replace(/\*(?=\S)([^*]*?\S)\*/g, "<em>$1</em>")
+       .replace(/(^|[^\w])_(?=\S)([^_]*?\S)_(?!\w)/g, "$1<em>$2</em>")
+       .replace(/~~(?=\S)([\s\S]*?\S)~~/g, "<del>$1</del>")
+       .replace(/==(?=\S)([\s\S]*?\S)==/g, `<span class="hl">$1</span>`)
+       .replace(/(^|\s)#([\p{L}\p{N}_\-/]*[\p{L}_\-/][\p{L}\p{N}_\-/]*)/gu, (m, sp, tag) => `${sp}<span class="tag" data-tag="${tag}">#${tag}</span>`);
+  return s.replace(/\u0000(\d+)\u0000/g, (m, i) => keep[+i]);
+}
+
+function splitTarget(t) {
+  const [a, alias] = t.split("|");
+  const [name, sub] = a.split(/#\^?|\^/);
+  return {name: name.trim(), sub: (sub || "").trim(), alias: alias && alias.trim()};
+}
+function resolveLocal(name) {
+  const n = name.replace(/\\/g, "/").replace(/\.md$/i, "").toLowerCase();
+  if (!n) return null;
+  const exact = S.files.find(f => f.path.toLowerCase() === n + ".md" || f.path.toLowerCase() === n);
+  if (exact) return exact.path;
+  if (!n.includes("/")) {
+    if (S.stems.has(n)) return S.stems.get(n);
+    const img = S.files.filter(f => f.name.toLowerCase() === n).sort((a, b) => a.path.split("/").length - b.path.split("/").length)[0];
+    return img ? img.path : null;
+  }
+  const hit = S.files.filter(f => f.path.toLowerCase().replace(/\.md$/, "").endsWith("/" + n)).sort((a, b) => a.path.length - b.path.length)[0];
+  return hit ? hit.path : null;
+}
+function wiki(t) {
+  const {name, sub, alias} = splitTarget(t);
+  const label = alias || (name ? name.split("/").pop() : "") + (sub ? (name ? " > " : "") + sub : "");
+  const res = name ? resolveLocal(name) : renderBase;
+  return `<a class="wl${res ? "" : " unres"}" data-link="${esc(name)}" data-sub="${esc(sub)}" title="${esc(res || name + " (not created yet)")}">${esc(label)}</a>`;
+}
+function embed(t) {
+  const {name, alias} = splitTarget(t);
+  if (/\.(png|jpe?g|gif|webp|svg)$/i.test(name)) {
+    const res = resolveLocal(name) || resolveRel(name);
+    const w = alias && /^\d+(x\d+)?$/.test(alias) ? ` width="${alias.split("x")[0]}"` : "";
+    return res ? `<img src="${fileUrl(res)}" alt="${esc(name)}"${w} loading="lazy">` : `<span class="embed-missing">${esc(name)} not found</span>`;
+  }
+  const res = resolveLocal(name);
+  return res ? `<div class="embed-note" data-embed="${esc(res)}"><a class="wl" data-link="${esc(name)}">${esc(baseName(res))}</a></div>` : `<span class="embed-missing">"${esc(name)}" not created yet</span>`;
+}
+function resolveRel(u) {
+  let p = decodeURIComponent(u).replace(/^\.\//, "");
+  if (p.startsWith("/")) return p.slice(1);
+  const parts = (dirOf(renderBase) ? dirOf(renderBase).split("/") : []);
+  for (const seg of p.split("/")) { if (seg === "..") parts.pop(); else if (seg !== ".") parts.push(seg); }
+  const full = parts.join("/");
+  return S.files.some(f => f.path === full) ? full : null;
+}
+function imgTag(u, alt) {
+  if (/^(https?:|data:)/i.test(u)) return `<img src="${esc(u)}" alt="${esc(alt)}" loading="lazy">`;
+  const res = resolveRel(u) || resolveLocal(decodeURIComponent(u).split("/").pop());
+  const w = /^\d+$/.test(alt.split("|").pop()) ? ` width="${alt.split("|").pop()}"` : "";
+  return res ? `<img src="${fileUrl(res)}" alt="${esc(alt)}"${w} loading="lazy">` : `<span class="embed-missing">${esc(u)} not found</span>`;
+}
+function linkTag(u, t) {
+  if (/^(https?:|mailto:|obsidian:)/i.test(u)) return `<a class="ext" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t)}</a>`;
+  const [p, sub] = decodeURIComponent(u).split("#");
+  const res = resolveRel(/\.\w+$/.test(p) ? p : p + ".md") || resolveLocal(p);
+  return `<a class="wl${res ? "" : " unres"}" data-link="${esc(res || p)}" data-sub="${esc(sub || "")}">${esc(t)}</a>`;
+}
+
+function renderMd(text, path) {
+  renderBase = path || "";
+  const {props, body, offset} = parseFront(text.replace(/\r\n/g, "\n"));
+  return renderProps(props) + blocks(body.split("\n"), offset);
+}
+
+const LIST = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
+function blocks(lines, base) {
+  const out = []; let para = [];
+  let hcount = 0;
+  const flush = () => { if (para.length) { out.push(`<p data-line="${para[0].n}">${para.map(p => inline(p.t)).join("<br>")}</p>`); para = []; } };
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i], n = base + i + 1;
+    let m;
+    if ((m = l.match(/^(\s*)(```+|~~~+)\s*([\w+#.-]*)/))) {
+      flush();
+      const fence = m[2], code = [];
+      i++;
+      while (i < lines.length && !lines[i].trim().startsWith(fence)) code.push(lines[i++]);
+      out.push(`<pre data-line="${n}">${m[3] ? `<span class="lang">${esc(m[3])}</span>` : ""}<code>${esc(code.join("\n"))}</code></pre>`);
+      continue;
+    }
+    if (!l.trim()) { flush(); continue; }
+    if ((m = l.match(/^(#{1,6})\s+(.+?)\s*#*\s*$/))) {
+      flush(); out.push(`<h${m[1].length} data-line="${n}" id="h-${hcount++}">${inline(m[2])}</h${m[1].length}>`); continue;
+    }
+    if (/^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(l)) { flush(); out.push(`<hr data-line="${n}">`); continue; }
+    if (/^\s*>/.test(l)) {
+      flush();
+      const q = [];
+      while (i < lines.length && /^\s*>/.test(lines[i])) q.push(lines[i++].replace(/^\s*> ?/, ""));
+      i--;
+      const c = q[0].match(/^\[!(\w+)\][+-]?\s*(.*)$/);
+      if (c) out.push(`<div class="callout" data-line="${n}"><div class="callout-t">${inline(c[2] || c[1])}</div>${blocks(q.slice(1), n)}</div>`);
+      else out.push(`<blockquote data-line="${n}">${blocks(q, n - 1)}</blockquote>`);
+      continue;
+    }
+    if (l.includes("|") && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(lines[i + 1])) {
+      flush();
+      const cells = r => r.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(c => c.trim());
+      const head = cells(l); i += 2;
+      const rows = [];
+      while (i < lines.length && lines[i].includes("|") && lines[i].trim()) rows.push(cells(lines[i++]));
+      i--;
+      out.push(`<table data-line="${n}"><thead><tr>${head.map(c => `<th>${inline(c)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${inline(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+      continue;
+    }
+    if (LIST.test(l)) {
+      flush();
+      const items = [];
+      while (i < lines.length) {
+        const lm = lines[i].match(LIST);
+        if (lm) items.push({indent: lm[1].replace(/\t/g, "    ").length, ordered: /\d/.test(lm[2]), start: parseInt(lm[2]) || 1, text: lm[3], n: base + i + 1});
+        else if (lines[i].trim() && /^\s+/.test(lines[i]) && items.length) items[items.length - 1].text += "\n" + lines[i].trim();
+        else break;
+        i++;
+      }
+      i--;
+      out.push(list(items, 0, items.length));
+      continue;
+    }
+    para.push({t: l, n});
+  }
+  flush();
+  return out.join("");
+}
+function list(items, a, b) {
+  const ordered = items[a].ordered, ind = items[a].indent;
+  let h = ordered ? `<ol${items[a].start !== 1 ? ` start="${items[a].start}"` : ""}>` : "<ul>";
+  for (let i = a; i < b;) {
+    let j = i + 1;
+    while (j < b && items[j].indent > ind) j++;
+    const it = items[i];
+    const tm = it.text.match(/^\[([ xX\-\/])\]\s?(.*)$/s);
+    const txt = (tm ? tm[2] : it.text).split("\n").map(inline).join("<br>");
+    const kids = j > i + 1 ? list(items, i + 1, j) : "";
+    if (tm) {
+      const done = tm[1] !== " ";
+      h += `<li class="task${done ? " done" : ""}" data-line="${it.n}"><input type="checkbox" data-task="${it.n}"${done ? " checked" : ""}><span class="lt">${txt}</span>${kids}</li>`;
+    } else h += `<li data-line="${it.n}">${txt}${kids}</li>`;
+    i = j;
+  }
+  return h + (ordered ? "</ol>" : "</ul>");
+}
+
+function hydrate(t) {
+  const md = $("#md");
+  md.querySelectorAll(".embed-note[data-embed]").forEach(async el => {
+    try {
+      const txt = await api(fileUrl(el.dataset.embed));
+      const keepBase = renderBase;
+      el.innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:6px">${el.innerHTML}</div>` + renderMd(txt.slice(0, 20000), el.dataset.embed);
+      renderBase = keepBase;
+    } catch (e) {}
+  });
+}
+
+$("#view").addEventListener("click", e => {
+  const a = e.target.closest("a.wl");
+  if (a) { e.preventDefault(); followLink(a.dataset.link, a.dataset.sub, e.ctrlKey || e.metaKey); return; }
+  const tag = e.target.closest(".tag[data-tag]");
+  if (tag) { showSearch("#" + tag.dataset.tag); return; }
+});
+$("#view").addEventListener("change", e => {
+  const cb = e.target.closest("input[data-task]"); if (!cb) return;
+  const t = curTab(); if (!t) return;
+  const n = +cb.dataset.task - 1;
+  const lines = t.text.split("\n");
+  if (lines[n] === undefined) return;
+  lines[n] = lines[n].replace(/\[([ xX\-\/])\]/, cb.checked ? "[x]" : "[ ]");
+  t.text = lines.join("\n");
+  cb.closest("li").classList.toggle("done", cb.checked);
+  saveTab(t);
+});
+
+async function followLink(name, sub, newTab) {
+  const t = curTab();
+  if (!name) { if (sub) gotoHeading(sub); return; }
+  let path = resolveLocal(name);
+  if (!path) {
+    try { path = (await api("/api/vault/resolve?name=" + encodeURIComponent(name))).path; }
+    catch (e) {
+      if (e.status !== 404) { toast(e.message); return; }
+      const folder = name.includes("/") ? "" : (t && t.path ? dirOf(t.path) : "");
+      const p = (folder ? folder + "/" : "") + name.replace(/\.md$/i, "") + ".md";
+      try { await api("/api/vault/new", {path: p}); }
+      catch (e2) { toast("Could not create note: " + e2.message); return; }
+      await loadTree();
+      await openFile(p, {mode: "edit", newTab});
+      toast("Created " + p);
+      return;
+    }
+  }
+  await openFile(path, {newTab});
+  if (sub) setTimeout(() => gotoHeading(sub), 30);
+}
+function gotoHeading(sub) {
+  const t = curTab(); if (!t) return;
+  const h = headings(t.text).find(h => h.text.toLowerCase() === sub.toLowerCase());
+  if (h) gotoLine(h.line);
+}
+
+/* ---------- note ops ---------- */
+async function newNote(name) {
+  const folder = (() => {
+    const t = curTab();
+    if (t && t.path) return dirOf(t.path);
+    return S.tree.some(i => i.type === "folder" && i.name === "Third Eye") ? "Third Eye" : "";
+  })();
+  let base = name || "Untitled", p, k = 0;
+  const exists = q => S.files.some(f => f.path.toLowerCase() === q.toLowerCase());
+  do { p = (folder ? folder + "/" : "") + base + (k ? " " + k : "") + ".md"; k++; } while (exists(p));
+  try { await api("/api/vault/new", {path: p}); }
+  catch (e) { toast("Could not create: " + e.message); return; }
+  await loadTree();
+  await openFile(p, {mode: "edit", newTab: true});
+  const it = $("#ititle"); if (it && !name) { it.focus(); it.select(); }
+}
+
+async function renameFile(path, to) {
+  const t = S.tabs.find(x => x.path === path);
+  if (t && t.dirty) await saveTab(t);
+  try {
+    const r = await api("/api/vault/rename", {path, to});
+    S.tabs.forEach(x => { if (x.path === path) x.path = r.path; });
+    revealFolders(r.path);
+    await loadTree(); persistTabs(); render();
+    toast("Renamed to " + r.path);
+  } catch (e) { toast("Rename failed: " + e.message); render(); }
+}
+
+async function trashFile(path) {
+  if (!confirm(`Move "${path}" to the vault's .trash folder?`)) return;
+  try {
+    await api("/api/vault/delete", {path});
+    const i = S.tabs.findIndex(x => x.path === path);
+    if (i >= 0) { S.tabs[i].dirty = false; S.tabs.splice(i, 1); if (S.active >= S.tabs.length) S.active = S.tabs.length - 1; else if (i < S.active) S.active--; }
+    await loadTree(); persistTabs(); render();
+    toast("Moved to .trash");
+  } catch (e) { toast("Delete failed: " + e.message); }
+}
+
+$("#vh-mode").onclick = () => toggleMode();
+function toggleMode() {
+  const t = curTab(); if (!t || t.kind !== "note") return;
+  t.scroll = $("#view").scrollTop;
+  t.mode = t.mode === "edit" ? "read" : "edit";
+  if (t.dirty) saveTab(t);
+  render();
+  if (t.mode === "edit") $("#editor").focus();
+}
+$("#vh-delete").onclick = () => { const t = curTab(); if (t && t.path) trashFile(t.path); };
+$("#vh-open").onclick = async () => {
+  const t = curTab();
+  try { const r = await api("/api/vault/open", {path: t && t.path || ""}); toast(r.ok ? "Opening in Obsidian" : "Could not open Obsidian: " + r.error); }
+  catch (e) { toast("Could not open Obsidian: " + e.message); }
+};
+
+/* ---------- search ---------- */
+function showPane(which) {
+  $("#p-files").style.display = which === "files" ? "flex" : "none";
+  $("#p-search").style.display = which === "search" ? "flex" : "none";
+  $("#rb-files").classList.toggle("on", which === "files");
+  $("#rb-search").classList.toggle("on", which === "search");
+  $("#app").classList.remove("noleft"); $("#app").classList.add("showleft");
+}
+function showSearch(q) {
+  showPane("search");
+  const inp = $("#q");
+  if (q != null) { inp.value = q; runSearch(); }
+  inp.focus(); inp.select();
+}
+let searchT, searchSeq = 0;
+$("#q").addEventListener("input", () => { clearTimeout(searchT); searchT = setTimeout(runSearch, 220); });
+$("#q").addEventListener("keydown", e => { if (e.key === "Enter") { clearTimeout(searchT); runSearch(); } });
+async function runSearch() {
+  const q = $("#q").value.trim(), seq = ++searchSeq;
+  const box = $("#results");
+  if (!q) { box.innerHTML = ""; return; }
+  let rows;
+  try { rows = await api("/api/vault/search?q=" + encodeURIComponent(q)); } catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (seq !== searchSeq) return;
+  const hl = s => esc(s).replace(new RegExp(esc(q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), m => `<mark>${m}</mark>`);
+  const by = new Map();
+  for (const r of rows) { if (!by.has(r.path)) by.set(r.path, []); if (r.line) by.get(r.path).push(r); }
+  box.innerHTML = rows.length ? `<div class="empty" style="padding:4px 14px 8px">${by.size} file${by.size === 1 ? "" : "s"}${rows.length >= 100 ? ", first 100 matches" : ""}</div>` + [...by].map(([p, rs]) =>
+    `<div class="sr-file" data-path="${esc(p)}">${hl(baseName(p))}<span>${rs.length || ""}</span></div>` +
+    rs.map(r => `<div class="sr-hit" data-path="${esc(p)}" data-line="${r.line}" title="${esc(r.text)}">${hl(r.text)}</div>`).join("")).join("") : `<div class="empty">No matches.</div>`;
+}
+$("#results").addEventListener("click", e => {
+  const r = e.target.closest("[data-path]"); if (!r) return;
+  openFile(r.dataset.path, {line: +r.dataset.line || 0});
+});
+
+/* ---------- quick switcher ---------- */
+let qsItems = [], qsSel = 0;
+function fuzzy(q, s) {
+  q = q.toLowerCase(); const l = s.toLowerCase();
+  if (!q) return 1;
+  const idx = l.indexOf(q);
+  if (idx >= 0) return 1000 - idx - l.length * .1 + (l.lastIndexOf("/") < idx ? 200 : 0);
+  let score = 0, j = 0, run = 0;
+  for (let i = 0; i < l.length && j < q.length; i++) {
+    if (l[i] === q[j]) { j++; run++; score += 2 + run * 3; } else run = 0;
+  }
+  return j === q.length ? score - l.length * .1 : -1;
+}
+function openSwitcher() {
+  $("#modal").classList.add("on");
+  const inp = $("#qs-in"); inp.value = ""; qsFilter(); inp.focus();
+}
+function closeSwitcher() { $("#modal").classList.remove("on"); }
+function qsFilter() {
+  const q = $("#qs-in").value.trim();
+  const recent = store.get("recent", []);
+  qsItems = S.files.map(f => ({f, s: q ? fuzzy(q, f.path.replace(/\.md$/i, "")) : (recent.indexOf(f.path) >= 0 ? 1e6 - recent.indexOf(f.path) : f.mtime / 1e10)}))
+    .filter(x => x.s >= 0).sort((a, b) => b.s - a.s).slice(0, 60).map(x => x.f);
+  qsSel = 0; qsDraw(q);
+}
+function qsDraw(q) {
+  const list = $("#qs-list");
+  const create = q && !S.files.some(f => baseName(f.path).toLowerCase() === q.toLowerCase());
+  list.innerHTML = qsItems.map((f, i) => `<div class="qs-item${i === qsSel ? " on" : ""}" data-i="${i}"><b>${esc(isMd(f.path) ? baseName(f.path) : f.name)}</b><small>${esc(dirOf(f.path))}</small></div>`).join("")
+    + (create ? `<div class="qs-item${qsItems.length === 0 ? " on" : ""}" data-create="1"><b>Create "${esc(q)}"</b><small>Shift+Enter</small></div>` : "");
+  const on = list.querySelector(".on"); if (on) on.scrollIntoView({block: "nearest"});
+}
+$("#qs-in").addEventListener("input", qsFilter);
+$("#qs-in").addEventListener("keydown", e => {
+  const q = $("#qs-in").value.trim();
+  if (e.key === "ArrowDown") { e.preventDefault(); qsSel = Math.min(qsSel + 1, qsItems.length - 1); qsDraw(q); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); qsSel = Math.max(qsSel - 1, 0); qsDraw(q); }
+  else if (e.key === "Escape") closeSwitcher();
+  else if (e.key === "Enter") {
+    e.preventDefault();
+    if ((e.shiftKey || !qsItems.length) && q) { closeSwitcher(); createNamed(q); }
+    else if (qsItems[qsSel]) { closeSwitcher(); openFile(qsItems[qsSel].path, {newTab: e.ctrlKey || e.metaKey}); }
+  }
+});
+$("#qs-list").addEventListener("click", e => {
+  const it = e.target.closest(".qs-item"); if (!it) return;
+  closeSwitcher();
+  if (it.dataset.create) createNamed($("#qs-in").value.trim());
+  else openFile(qsItems[+it.dataset.i].path);
+});
+$("#modal").addEventListener("mousedown", e => { if (e.target.id === "modal") closeSwitcher(); });
+async function createNamed(q) {
+  q = q.replace(/\.md$/i, "");
+  if (q.includes("/")) {
+    try { await api("/api/vault/new", {path: q + ".md"}); await loadTree(); openFile(q + ".md", {mode: "edit", newTab: true}); }
+    catch (e) { toast("Could not create: " + e.message); }
+  } else newNote(q);
+}
+
+/* ---------- graph ---------- */
+let G = null;
+function stopGraph() {
+  if (!G) return;
+  cancelAnimationFrame(G.raf);
+  if (G.ro) G.ro.disconnect();
+  window.removeEventListener("mousemove", G.onmove);
+  window.removeEventListener("mouseup", G.onup);
+  G = null;
+}
+async function startGraph() {
+  const cv = $("#graph");
+  const data = await api("/api/vault/graph");
+  if (!cv.isConnected) return;
+  const ctx = cv.getContext("2d");
+  const idx = new Map();
+  const nodes = data.nodes.map((n, i) => { idx.set(n.path, i); const a = i * 2.4; const r = 30 + 12 * Math.sqrt(i); return {...n, x: Math.cos(a) * r, y: Math.sin(a) * r, vx: 0, vy: 0, deg: 0}; });
+  const edges = data.edges.map(([a, b]) => [idx.get(a), idx.get(b)]).filter(e => e[0] != null && e[1] != null);
+  edges.forEach(([a, b]) => { nodes[a].deg++; nodes[b].deg++; });
+  const cur = curTab();
+  G = {cv, ctx, nodes, edges, view: {x: 0, y: 0, k: 1}, hover: -1, drag: null, alpha: 1, raf: 0};
+  $("#graphinfo").textContent = `${nodes.length} notes  ${edges.length} links`;
+  const dpr = window.devicePixelRatio || 1;
+  const size = () => { const r = cv.getBoundingClientRect(); cv.width = r.width * dpr; cv.height = r.height * dpr; G.w = r.width; G.h = r.height; };
+  size();
+  G.ro = new ResizeObserver(size); G.ro.observe(cv);
+  const nbr = new Map();
+  edges.forEach(([a, b]) => { (nbr.get(a) || nbr.set(a, new Set()).get(a)).add(b); (nbr.get(b) || nbr.set(b, new Set()).get(b)).add(a); });
+  const rad = n => 3.5 + Math.min(8, Math.sqrt(n.deg) * 1.6);
+
+  function step() {
+    const a = G.alpha;
+    if (a > 0.005) {
+      for (let i = 0; i < nodes.length; i++) {
+        const p = nodes[i];
+        for (let j = i + 1; j < nodes.length; j++) {
+          const q = nodes[j];
+          let dx = p.x - q.x, dy = p.y - q.y, d2 = dx * dx + dy * dy + .01;
+          if (d2 > 90000) continue;
+          const f = 900 / d2 * a;
+          p.vx += dx * f; p.vy += dy * f; q.vx -= dx * f; q.vy -= dy * f;
+        }
+      }
+      for (const [i, j] of edges) {
+        const p = nodes[i], q = nodes[j];
+        const dx = q.x - p.x, dy = q.y - p.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
+        const f = (d - 70) / d * .05 * a;
+        p.vx += dx * f; p.vy += dy * f; q.vx -= dx * f; q.vy -= dy * f;
+      }
+      for (const p of nodes) {
+        p.vx -= p.x * .006 * a; p.vy -= p.y * .006 * a;
+        if (G.drag && G.drag.node === p) { p.vx = p.vy = 0; continue; }
+        p.vx *= .6; p.vy *= .6; p.x += p.vx; p.y += p.vy;
+      }
+      G.alpha *= .992;
+    }
+    draw();
+    G.raf = requestAnimationFrame(step);
+  }
+  function draw() {
+    const {view: v} = G;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, G.w, G.h);
+    ctx.translate(G.w / 2 + v.x, G.h / 2 + v.y); ctx.scale(v.k, v.k);
+    const hv = G.hover, near = hv >= 0 ? nbr.get(hv) || new Set() : null;
+    ctx.lineWidth = 1 / v.k;
+    for (const [i, j] of edges) {
+      const on = hv >= 0 && (i === hv || j === hv);
+      ctx.strokeStyle = on ? "rgba(164,138,228,.85)" : hv >= 0 ? "rgba(255,255,255,.04)" : "rgba(255,255,255,.14)";
+      ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.stroke();
+    }
+    nodes.forEach((n, i) => {
+      const dim = hv >= 0 && i !== hv && !near.has(i);
+      const isCur = cur && n.path === S.lastNote;
+      ctx.fillStyle = dim ? "rgba(164,138,228,.18)" : i === hv || isCur ? "#c9b8ff" : "#a48ae4";
+      ctx.beginPath(); ctx.arc(n.x, n.y, rad(n), 0, Math.PI * 2); ctx.fill();
+      if (isCur) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5 / v.k; ctx.stroke(); ctx.lineWidth = 1 / v.k; }
+      if (v.k > .6 || i === hv || (near && near.has(i))) {
+        ctx.font = `${11 / Math.max(v.k, .6)}px Inter, Segoe UI, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.fillStyle = dim ? "rgba(255,255,255,.12)" : i === hv ? "#fff" : "rgba(255,255,255,.62)";
+        ctx.fillText(n.name, n.x, n.y + rad(n) + 12 / Math.max(v.k, .6));
+      }
+    });
+  }
+  const toWorld = (cx, cy) => { const r = cv.getBoundingClientRect(); return [(cx - r.left - G.w / 2 - G.view.x) / G.view.k, (cy - r.top - G.h / 2 - G.view.y) / G.view.k]; };
+  const pick = (cx, cy) => {
+    const [x, y] = toWorld(cx, cy);
+    let best = -1, bd = Infinity;
+    nodes.forEach((n, i) => { const d = Math.hypot(n.x - x, n.y - y); if (d < rad(n) + 4 / G.view.k && d < bd) { bd = d; best = i; } });
+    return best;
+  };
+  cv.addEventListener("mousedown", e => {
+    const i = pick(e.clientX, e.clientY);
+    G.drag = {node: i >= 0 ? nodes[i] : null, sx: e.clientX, sy: e.clientY, vx: G.view.x, vy: G.view.y, moved: false, i};
+    cv.style.cursor = "grabbing";
+  });
+  window.addEventListener("mousemove", G.onmove = e => {
+    if (!G || !G.cv.isConnected) return;
+    const d = G.drag;
+    if (d) {
+      if (Math.abs(e.clientX - d.sx) + Math.abs(e.clientY - d.sy) > 3) d.moved = true;
+      if (d.node) { const [x, y] = toWorld(e.clientX, e.clientY); d.node.x = x; d.node.y = y; G.alpha = Math.max(G.alpha, .3); }
+      else { G.view.x = d.vx + e.clientX - d.sx; G.view.y = d.vy + e.clientY - d.sy; }
+    } else if (e.target === cv) {
+      G.hover = pick(e.clientX, e.clientY);
+      cv.style.cursor = G.hover >= 0 ? "pointer" : "grab";
+    }
+  });
+  window.addEventListener("mouseup", G.onup = e => {
+    if (!G) return;
+    const d = G.drag; G.drag = null; cv.style.cursor = "grab";
+    if (d && !d.moved && d.i >= 0) openFile(nodes[d.i].path, {newTab: true});
+  });
+  cv.addEventListener("wheel", e => {
+    e.preventDefault();
+    const r = cv.getBoundingClientRect();
+    const mx = e.clientX - r.left - G.w / 2, my = e.clientY - r.top - G.h / 2;
+    const k = Math.min(4, Math.max(.15, G.view.k * Math.exp(-e.deltaY * .0015)));
+    G.view.x = mx - (mx - G.view.x) * k / G.view.k; G.view.y = my - (my - G.view.y) * k / G.view.k; G.view.k = k;
+  }, {passive: false});
+  cv.addEventListener("mouseleave", () => { if (G) G.hover = -1; });
+  step();
+}
+function openGraph() {
+  const i = S.tabs.findIndex(t => t.kind === "graph");
+  const t = curTab(); if (t && t.kind === "note") S.lastNote = t.path;
+  if (i >= 0) { activate(i); return; }
+  S.tabs.splice(S.active + 1, 0, {kind: "graph", path: ""});
+  activate(S.active + 1);
+}
+
+/* ---------- ribbon / keys ---------- */
+$("#rb-files").onclick = () => showPane("files");
+$("#rb-search").onclick = () => showSearch();
+$("#rb-graph").onclick = openGraph;
+$("#rb-switch").onclick = openSwitcher;
+$("#rb-new").onclick = () => newNote();
+$("#rb-left").onclick = () => { const a = $("#app"); a.classList.toggle("noleft"); a.classList.toggle("showleft", !a.classList.contains("noleft")); };
+$("#rb-right").onclick = () => { const a = $("#app"); a.classList.toggle("noright"); a.classList.toggle("showright", !a.classList.contains("noright")); };
+
+document.addEventListener("keydown", e => {
+  const mod = e.ctrlKey || e.metaKey;
+  if (!mod) { if (e.key === "Escape" && $("#modal").classList.contains("on")) closeSwitcher(); return; }
+  const k = e.key.toLowerCase();
+  if (k === "s") { e.preventDefault(); saveTab(curTab()); }
+  else if (k === "p" || k === "o") { e.preventDefault(); openSwitcher(); }
+  else if (k === "n" && !e.shiftKey) { e.preventDefault(); newNote(); }
+  else if (k === "e") { e.preventDefault(); toggleMode(); }
+  else if (k === "g") { e.preventDefault(); openGraph(); }
+  else if (k === "f" && e.shiftKey) { e.preventDefault(); showSearch(); }
+  else if (k === "w") { if (S.tabs.length) { e.preventDefault(); closeTab(S.active); } }
+  else if (k === "tab" && S.tabs.length > 1) { e.preventDefault(); activate((S.active + (e.shiftKey ? -1 : 1) + S.tabs.length) % S.tabs.length); }
+});
+window.addEventListener("beforeunload", () => {
+  for (const t of S.tabs.filter(t => t.dirty)) {
+    try { fetch("/api/vault/save", {method: "POST", keepalive: true, headers: {"Content-Type": "application/json"}, body: JSON.stringify({path: t.path, text: t.text})}); } catch (x) {}
+  }
+});
+
+/* ---------- boot ---------- */
+(async function boot() {
+  try { await loadTree(); }
+  catch (e) { $("#view").innerHTML = `<div class="doc"><div class="empty">Vault not available: ${esc(e.message)}</div></div>`; return; }
+  const saved = store.get("tabs", null);
+  const have = p => S.files.some(f => f.path === p);
+  if (saved && saved.paths && saved.paths.filter(have).length) {
+    for (const p of saved.paths.filter(have)) await openFile(p, {newTab: true});
+    const i = S.tabs.findIndex(t => t.path === saved.active);
+    if (i >= 0) await activate(i);
+    return;
+  }
+  const notes = S.files.filter(f => isMd(f.path));
+  const pick = notes.find(f => f.path === "Third Eye/Tasks.md")
+    || notes.filter(f => f.path.startsWith("Third Eye/")).sort((a, b) => b.mtime - a.mtime)[0]
+    || notes.find(f => /(^|\/)Tasks\.md$/i.test(f.path))
+    || notes.slice().sort((a, b) => b.mtime - a.mtime)[0];
+  if (pick) await openFile(pick.path); else render();
+})();
+</script>
+</body>
+</html>

@@ -55,6 +55,9 @@ class NotesWriter:
     def add_task(self, t: float, task: str, due=None):
         self._add(t, "task", task + (f" (due {due})" if due else ""))
 
+    def add_clip(self, t: float, name: str, reason: str):
+        self._add(t, "clip", f"{name} ({reason})")
+
     def add_context(self, t: float, context: str, topic: str = ""):
         self._add(t, "context", context + (f": {topic}" if topic else ""))
 
@@ -86,6 +89,9 @@ class NotesWriter:
             elif kind == "context":
                 ctx, _, topic = text.partition(": ")
                 out.append({"t": t, "kind": kind, "text": ctx, "topic": topic})
+            elif kind == "clip":            # shown like an insight so the current dashboard can draw it
+                name = text.partition(" (")[0]
+                out.append({"t": t, "kind": "insight", "q": "Clip saved", "a": text, "clip": name})
             else:
                 q, _, a = text.partition("\n\n")
                 out.append({"t": t, "kind": kind, "q": q.replace("**You asked:** ", ""),
@@ -127,6 +133,8 @@ class NotesWriter:
                 out.append(f"`{fmt_time(t)}` **Task:** {text}  ")
             elif kind == "context":
                 out += ["", f"## {text.capitalize()} ({fmt_time(t)})", ""]
+            elif kind == "clip":
+                out.append(f"`{fmt_time(t)}` **Clip saved:** {text}  ")
             else:
                 out += ["", f"#### Question at {fmt_time(t)}", text, ""]
         return "\n".join(out) + "\n"

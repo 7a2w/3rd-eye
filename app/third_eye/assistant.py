@@ -196,46 +196,66 @@ def offline_answer(question: str, transcript: str) -> str:
     q = set(keywords(question))
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", transcript)
                  if len(s.split()) > 3 and not re.search(r"\b(third|3rd)[\s-]?(eye|i)\b", s, re.I)]
-    if not q or not sentences:
-        return "I haven't heard enough yet to answer that. Add an AI key for general questions."
+    about_talk = re.search(r"\b(said|say|says|saying|mention|mentioned|talk|talking|told|lecture|meeting|class|professor|they|he|she)\b",
+                           question, re.I)
     scored = sorted(sentences, key=lambda s: len(q & set(keywords(s))), reverse=True)
-    best = [s for s in scored[:2] if q & set(keywords(s))]
-    if not best:
-        return "That hasn't come up yet. Add an AI key for general questions."
-    return "From what I heard: " + " ".join(best)
+    best = [s for s in scored[:2] if len(q & set(keywords(s))) >= 2]
+    if about_talk and best:
+        return "From what I heard: " + " ".join(best)
+    return "I need an AI key for that. Click AI key and paste one."
 
 
 class Assistant:
-    SYSTEM = ("You are Third Eye, a discreet AI assistant in the user's earpiece. You can hear what is "
-              "happening around them. The user may have ADHD or be tired, so answer in 1-3 short, clear "
-              "spoken sentences. No lists, no markdown. Use what you heard when it is relevant, otherwise "
-              "answer from general knowledge.")
+    SYSTEM = ("You are Third Eye, an assistant speaking in the user's earpiece. Answer exactly what they asked, "
+              "directly, in one or two short sentences. Lead with the answer itself. Use general knowledge for "
+              "general questions. Never describe the situation, summarize what you heard, or mention the "
+              "background unless the question is about it. If the question is garbled, answer the most likely "
+              "meaning. No lists, no markdown, no filler.")
 
     def __init__(self):
         self.provider = config.ai_provider()
         self.online = bool(self.provider)
+        self.session_folder = None
         print(f"[assistant] {self.provider + ' API' if self.online else 'offline mode (no AI key set)'}")
 
     def answer(self, question: str, recent_transcript: str, slide_text: str = "", situation: str = "",
-               tasks=None) -> str:
+               tasks=None, fallback: bool = True) -> str:
+        """fallback=False raises when the AI call fails instead of answering from the transcript."""
         quick = quick_answer(question, recent_transcript, tasks)
         if quick:
             return quick
+        past, asks_past = "", False
+        try:
+            import memory
+            asks_past = memory.about_the_past(question)
+            if asks_past:
+                past = memory.search(question, skip_folder=self.session_folder)
+        except Exception as e:
+            print(f"[memory] {e}")
+        if not self.online and past:
+            return "Earlier: " + past.splitlines()[0].split("] ", 1)[-1]
         if self.online:
             try:
                 task_lines = "\n".join(f"- {t['task']}" + (f" (due {t['due']})" if t.get("due") else "")
                                         for t in (tasks or []) if not t.get("done")) or "(none)"
-                prompt = (f"Situation: {situation or 'unknown'}\n"
-                          f"Now: {time.strftime('%A %Y-%m-%d %H:%M')}\n\n"
-                          f"What you heard recently:\n{recent_transcript or '(nothing yet)'}\n\n"
-                          f"Text on the screen or board:\n{slide_text or '(none)'}\n\n"
-                          f"The user's open tasks:\n{task_lines}\n\n"
-                          f"User: {question}")
+                prompt = (f"QUESTION: {question}\n\n"
+                          "Background, only for questions about what was said, the room, or their tasks:\n"
+                          f"- Now: {time.strftime('%A %Y-%m-%d %H:%M')}\n"
+                          f"- Situation: {situation or 'unknown'}\n"
+                          f"- Recently heard (speech-to-text, may be wrong): {recent_transcript[-1500:] or '(nothing)'}\n"
+                          f"- On screen: {slide_text[-500:] or '(nothing)'}\n"
+                          f"- Open tasks: {task_lines}\n"
+                          + (f"- Earlier sessions (matching lines):\n{past}\n" if past else
+                             "- Earlier sessions: nothing matching was found. If the QUESTION is about an "
+                             "earlier session, say you don't have that.\n" if asks_past else "")
+                          + "\nAnswer the QUESTION.")
                 t0 = time.time()
                 answer = call_ai(self.SYSTEM, prompt, max_tokens=200, fast=True)
                 print(f"[assistant] answered in {time.time() - t0:.1f}s")
                 return answer
             except Exception as e:
+                if not fallback:
+                    raise
                 print(f"[assistant] API error, using offline answer: {e}")
         return offline_answer(question, recent_transcript)
 

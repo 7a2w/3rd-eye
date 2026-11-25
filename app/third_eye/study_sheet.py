@@ -269,7 +269,10 @@ def generate(writer, brain=None) -> dict:
         out["tasks_ics"] = writer.folder / "tasks.ics"
     try:
         import obsidian
-        writer.obsidian_note = obsidian.export(writer, sheet, tasks, context)
+        if config.ASK_BEFORE_OBSIDIAN:
+            writer.obsidian_proposal = obsidian.propose(writer, sheet, tasks, context)
+        else:
+            writer.obsidian_note = obsidian.export(writer, sheet, tasks, context)
     except Exception as e:
         print(f"[obsidian] could not save: {e}")
     return out

@@ -23,18 +23,24 @@ import json
 import os
 import platform
 import queue
+import re
 import threading
 import time
+import uuid
 import webbrowser
 
 import cv2
 
 import config
+import obsidian
 import study_sheet
 from assistant import Assistant, speak
 from audio_capture import FileAudioSource, LiveMicSource, list_input_devices
 from brain import Brain
+from clips import RollingBuffer
 from indicator import RecordingIndicator
+from offline import OfflineQueue, is_online
+from reminders import ReminderTimer
 from sync import NotesWriter, fmt_time
 from vision import SlideWatcher
 
@@ -95,9 +101,25 @@ def open_camera(index: int, warmup: float = 4.0, verbose: bool = False):
     return None
 
 
+def key_phrase(text: str) -> str:
+    """The first clip key phrase in text, or ""."""
+    words = "|".join(re.escape(w) for w in config.CLIP_KEY_PHRASES)
+    m = re.search(rf"\b({words})\b", text, re.I) if words else None
+    return m.group(1).lower() if m else ""
+
+
 class App:
     def __init__(self, args):
         self.args = args
+        self.prompting = False
+        self.buffer = RollingBuffer()
+        self.clip_count = 0
+        self._last_key_clip = 0.0
+        self.approvals = []                 # pending vault change sets, oldest first
+        self._approval_lock = threading.Lock()
+        self.offline = OfflineQueue(self._answer_queued)
+        self.reminders = ReminderTimer(lambda: self.brain.task_list() if self.brain else [])
+        threading.Thread(target=lambda: setattr(self.offline, "online", is_online()), daemon=True).start()
         self.phase = "setup"                # setup -> recording -> finishing -> done
         self.course = args.course
         self.course_given = bool(args.course)
@@ -168,6 +190,7 @@ class App:
             else:
                 self.source = LiveMicSource(self.mic_index)
                 self.source.open_paused()
+            self.source.on_audio = self.buffer.add_audio
         except Exception as e:
             self.audio_error = str(e)
             print(f"[audio] {e}")
@@ -256,6 +279,8 @@ class App:
                     self._jpeg = jpg.tobytes()
                     self.frame_id += 1
                     self._frame_cond.notify_all()
+                if self.device == "LISTEN":
+                    self.buffer.add_frame(self._jpeg)
             time.sleep(0.03)
         if cap is not None:
             cap.release()
@@ -273,10 +298,14 @@ class App:
         self.course_given = bool(course.strip())
         self.course = course.strip() or "Session"
         self.writer = NotesWriter(self.course)
+        self.assistant.session_folder = self.writer.folder
         print(f"[notes] saving to: {self.writer.folder.resolve()}")
         slides_ok = self.cam_index is not None and (self.cam_index != 0 or config.SLIDES_FROM_BUILTIN_CAMERA)
         self.vision = SlideWatcher(self.writer.folder) if slides_ok else None
         self.brain = Brain(self)
+        self.buffer.clear()
+        self.clip_count = 0
+        self._last_key_clip = 0.0
         self.running = True
         self._stt_thread = threading.Thread(target=self._transcribe_loop, daemon=True)
         self._stt_thread.start()
@@ -303,13 +332,64 @@ class App:
                 print(f"  {fmt_time(t)}  {text}")
                 if self.brain and self.phase == "recording":
                     threading.Thread(target=self.brain.on_speech, args=(t, text), daemon=True).start()
+                phrase = key_phrase(text)
+                if phrase and self.device == "LISTEN" and time.time() - self._last_key_clip >= config.CLIP_KEY_GAP:
+                    self._last_key_clip = time.time()
+                    self.save_clip(f'key phrase "{phrase}"')
+
+    # ---------------- device: SLEEP / LISTEN / PROMPT ----------------
+    @property
+    def device(self):
+        if self.prompting:
+            return "PROMPT"
+        if self.phase == "recording" and self.source is not None and not self.source.paused:
+            return "LISTEN"
+        return "SLEEP"
+
+    def button(self, button, press):
+        """Earpiece buttons. button is "brain" (Second Brain) or "prompt"; press is "short" or "long"."""
+        long = press == "long"
+        if button == "prompt" and self.approvals:
+            self.approve(self.approvals[0]["id"], not long)
+        elif button == "prompt" and not long:
+            self.ask_voice()
+        elif button == "brain" and long:
+            if self.phase == "recording":
+                self.set_sleep(not self.source.paused)
+            elif self.phase == "setup":
+                self.start(self.course if self.course_given else "")
+        elif button == "brain" and self.device == "LISTEN":
+            if self.save_clip("button"):
+                speak("Clip saved.")
+
+    def set_sleep(self, sleep: bool):
+        """SLEEP turns the mic and camera off; LISTEN turns them back on."""
+        if self.phase != "recording" or self.prompting or self.source.paused == sleep:
+            return
+        self.source.paused = sleep
+        self.indicator.set("PAUSED" if sleep else "REC")
+        self.status = "Paused. Nothing is being recorded." if sleep else ""
+        speak("Going to sleep." if sleep else "Listening.")
 
     def toggle_pause(self):
-        if self.phase != "recording" or self.asking:
-            return
-        self.source.paused = not self.source.paused
-        self.indicator.set("PAUSED" if self.source.paused else "REC")
-        self.status = "Paused. Nothing is being recorded." if self.source.paused else ""
+        if self.phase == "recording":
+            self.set_sleep(not self.source.paused)
+
+    def save_clip(self, reason: str):
+        """Copy the rolling buffer into the session folder as the next clip_NNN."""
+        writer = self.writer
+        if self.phase != "recording" or writer is None:
+            return None
+        self.clip_count += 1
+        name = f"clip_{self.clip_count:03d}"
+        try:
+            saved = self.buffer.save(writer.folder, name)
+        except OSError as e:
+            print(f"[clip] couldn't save {name}: {e}")
+            return None
+        writer.add_clip(time.time() - self.source.session_start, name, reason)
+        print(f"[clip] {name}: {saved['seconds']} s audio, {saved['frames']} frames ({reason})")
+        return name
 
     def ask_voice(self):
         if self.phase != "recording" or self.asking:
@@ -318,19 +398,17 @@ class App:
 
     def _ask_voice(self):
         self.asking = True
+        was_listen = self.device == "LISTEN"
+        self.prompting = True
+        frame = self._jpeg
         try:
-            file_mode = isinstance(self.source, FileAudioSource)
-            was_paused = self.source.paused
-            if file_mode:
+            if isinstance(self.source, FileAudioSource):
                 self.source.paused = True
             self.indicator.set("ASK")
             self.ask_until = time.time() + config.QUESTION_SECONDS
             self.status = "Listening to your question..."
             audio = self.source.ask_question()
             self.ask_until = 0
-            self.indicator.set("PAUSED" if was_paused else "REC")
-            if file_mode:
-                self.source.paused = was_paused
             self.status = "Thinking..."
             with self._stt_lock:
                 question = self.transcriber.transcribe(audio, use_context=False)
@@ -338,13 +416,18 @@ class App:
                 self.status = "Didn't catch that. Try again a bit louder."
                 speak("Sorry, I didn't catch that.")
                 return
+            if frame and self.writer:
+                n = len(list(self.writer.folder.glob("prompt_*.jpg"))) + 1
+                (self.writer.folder / f"prompt_{n:03d}.jpg").write_bytes(frame)
             self._answer(question)
         except Exception as e:
             self.status = f"Assistant error: {e}"
             print(f"[assistant] {e}")
         finally:
-            if self.indicator.mode == "ASK":
-                self.indicator.set("REC")
+            self.prompting = False
+            if self.phase == "recording":
+                self.source.paused = not was_listen
+                self.indicator.set("REC" if was_listen else "PAUSED")
             self.ask_until = 0
             self.asking = False
 
@@ -371,7 +454,22 @@ class App:
         if self.brain:
             situation = ", ".join(x for x in (self.brain.context, self.brain.topic) if x and x != "listening")
             tasks = self.brain.task_list()
-        answer = self.assistant.answer(question, recent, self.writer.slide_text(last_only=True), situation, tasks)
+        if self.assistant.online and len(self.offline):
+            self.offline.add(question)
+            self.status = "Offline. Your question is queued."
+            return
+        try:
+            answer = self.assistant.answer(question, recent, self.writer.slide_text(last_only=True), situation,
+                                           tasks, fallback=False)
+        except Exception as e:
+            print(f"[assistant] {e}")
+            if is_online():
+                self.status = "Couldn't answer. Try again."
+                speak("Sorry, I couldn't answer. Please try again.")
+            else:
+                self.offline.add(question)
+                self.status = "Offline. Your question is queued."
+            return
         t = time.time() - self.source.session_start if self.phase == "recording" else \
             (self.writer.entries[-1][0] if self.writer.entries else 0)
         self.writer.add_qa(t, question, answer)
@@ -379,6 +477,60 @@ class App:
         self.status = ""
         if say:
             speak(answer)
+
+    def _answer_queued(self, question):
+        if self.writer is not None:
+            self._answer(question)
+            return
+        answer = self.assistant.answer(question, "", fallback=False)
+        print(f"\n  YOU: {question}\n  AI:  {answer}\n")
+        speak(answer)
+
+    # ---------------- vault edit approval ----------------
+    def request_approval(self, writer, change):
+        item = {"id": uuid.uuid4().hex[:8], "summary": self._describe(change), "changes": change["changes"],
+                "change": change, "writer": writer}
+        with self._approval_lock:
+            self.approvals.append(item)
+            first = len(self.approvals) == 1
+        if first:
+            self._explain(item)
+
+    @staticmethod
+    def _describe(change):
+        parts = [f'save "{change["title"]}" as a new note']
+        n = len(change["task_lines"])
+        if n:
+            parts.append(f"add {n} task{'s' if n != 1 else ''} to Tasks.md")
+        n = len(change["links"])
+        if n:
+            parts.append(f"link it from {n} related note{'s' if n != 1 else ''}")
+        said = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+        return f"I'd like to {said} in Obsidian."
+
+    def _explain(self, item):
+        speak(item["summary"] + " Press Prompt to approve, or hold it to cancel.")
+        print(f"[obsidian] waiting for approval {item['id']} ({len(item['changes'])} changes)")
+
+    def approve(self, approval_id, yes):
+        with self._approval_lock:
+            item = next((a for a in self.approvals if a["id"] == approval_id), None)
+            if item is None:
+                return
+            self.approvals.remove(item)
+            nxt = self.approvals[0] if self.approvals else None
+        if yes:
+            try:
+                item["writer"].obsidian_note = obsidian.apply(item["change"])
+                speak("Saved.")
+            except Exception as e:
+                print(f"[obsidian] could not save: {e}")
+                speak("Sorry, I couldn't save that to Obsidian.")
+        else:
+            print(f"[obsidian] discarded {item['id']}")
+            speak("Discarded. Your notes are still in Third Eye.")
+        if nxt:
+            self._explain(nxt)
 
     def end(self, auto=False):
         if self.phase != "recording":
@@ -421,6 +573,9 @@ class App:
         self.phase = "done"
         print(f"\n=== Done. Files are in: {self.writer.folder.resolve()} ===")
         speak("Session saved. Your summary and reminders are ready.")
+        proposal = getattr(self.writer, "obsidian_proposal", None)
+        if proposal:
+            self.request_approval(self.writer, proposal)
         if self.auto_ended and self.auto and config.AUTO_RESTART_SECONDS:
             self.restart_at = time.time() + config.AUTO_RESTART_SECONDS
             threading.Thread(target=self._auto_restart, daemon=True).start()
@@ -520,6 +675,11 @@ class App:
             "auto": self.auto,
             "keys": {"gemini": bool(config.GEMINI_API_KEY), "claude": bool(config.ANTHROPIC_API_KEY)},
             "restart_in": max(0, round(self.restart_at - time.time())) if self.restart_at else None,
+            "device": {"state": self.device, "clips": self.clip_count, "queue": len(self.offline),
+                       "online": self.offline.online},
+            "approval": ({k: self.approvals[0][k] for k in ("id", "summary", "changes")}
+                         if self.approvals else None),
+            "reminders": self.reminders.upcoming(3),
         }
         if self.brain:
             s["brain"] = {"context": self.brain.context, "topic": self.brain.topic, "title": self.brain.title,
